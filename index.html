@@ -609,87 +609,173 @@ function drawChicken(ch, period, nowMs, foxX) {
 
   // Flee logic
   const dist = Math.abs(ch.x - foxX);
-  const fleeRadius = 0.12;
-  ch.fleeing = dist < fleeRadius;
+  ch.fleeing = dist < 0.12;
 
   // Movement
   const spd = ch.fleeing ? ch.fleeSpeed : ch.speed;
   if (ch.fleeing) {
     ch.dir = ch.x > foxX ? 1 : -1;
   } else {
-    // Random wander direction changes
     if (Math.random() < 0.001) ch.dir *= -1;
   }
   ch.x += spd * ch.dir;
-  if (ch.x > 0.9) { ch.dir = -1; ch.x = 0.9; }
+  if (ch.x > 0.90) { ch.dir = -1; ch.x = 0.90; }
   if (ch.x < 0.08) { ch.dir =  1; ch.x = 0.08; }
-  ch.walkFrame += ch.fleeing ? 0.25 : 0.08;
+  ch.walkFrame += ch.fleeing ? 0.22 : 0.07;
 
   // Cluck timer
   ch.cluckTimer -= 16;
   if (ch.cluckTimer <= 0) {
     ch.clucking = true;
-    ch.cluckTimer = 1500 + Math.random() * 4000;
+    ch.cluckTimer = 2000 + Math.random() * 5000;
     setTimeout(() => { ch.clucking = false; }, ch.cluckDuration);
   }
 
-  const cx = ch.x * W;
-  const cy = groundY;
-  const flip = ch.dir === -1;
+  const cx  = ch.x * W;
+  const cy  = groundY;
   const bob = ch.fleeing
-    ? Math.abs(Math.sin(ch.walkFrame)) * 2 * S
-    : Math.abs(Math.sin(ch.walkFrame)) * S;
+    ? Math.abs(Math.sin(ch.walkFrame)) * 2.5 * S
+    : Math.abs(Math.sin(ch.walkFrame * 0.5)) * 0.8 * S;
 
-  // Colors
-  const bodyC  = isNight ? '#8a6a20' : '#f0c840';  // yellow body
-  const wingC  = isNight ? '#6a5010' : '#d4a820';  // darker wing
-  const combC  = isNight ? '#6a1010' : '#e02020';  // red comb/wattle
-  const beakC  = isNight ? '#7a5a00' : '#e0a000';  // orange beak
-  const legC   = isNight ? '#7a5a00' : '#d08000';  // orange legs
-  const eyeC   = '#1a1a1a';
+  // Wing flap angle when fleeing
+  const wingFlap = ch.fleeing ? Math.sin(ch.walkFrame * 2) * 3 * S : 0;
 
+  // ---- Colors (realistic chicken: warm white/beige feathers) ----
+  const bodyHi  = isNight ? '#9a8a70' : '#f5eedc'; // light feather highlight
+  const bodyMid = isNight ? '#7a6a50' : '#d4c4a0'; // mid feather
+  const bodySh  = isNight ? '#5a4a30' : '#b0a080'; // shadow underside
+  const wingHi  = isNight ? '#8a7a60' : '#e8dcc8';
+  const wingSh  = isNight ? '#6a5a40' : '#c4b490';
+  const tailHi  = isNight ? '#7a6a50' : '#d8cca8';
+  const tailSh  = isNight ? '#5a4a30' : '#b09870';
+  const combC   = isNight ? '#7a1818' : '#cc2020';
+  const wattleC = isNight ? '#8a1a1a' : '#dd1818';
+  const beakC   = isNight ? '#907020' : '#d4a030';
+  const legC    = isNight ? '#908050' : '#c8a040';
+  const scaleC  = isNight ? '#706030' : '#b09030'; // leg scales
+  const eyeC    = '#1a1010';
+  const eyeHi   = '#fffbe0';
+
+  // Draw facing right, flip canvas for left
+  const flip = ch.dir === -1;
   ctx.save();
-  if (flip) { ctx.translate(cx*2, 0); ctx.scale(-1, 1); }
+  if (flip) { ctx.translate(cx * 2, 0); ctx.scale(-1, 1); }
 
-  // Legs (animated)
+  const bx = cx; // base x
+
+  // ---- LEGS & FEET ----
+  const lstep = Math.sin(ch.walkFrame);
+  const leg1y = cy - 4*S + lstep * 1.5 * S;
+  const leg2y = cy - 4*S - lstep * 1.5 * S;
+  // Thigh
   ctx.fillStyle = legC;
-  const legSwing = Math.sin(ch.walkFrame) * S;
-  ctx.fillRect(Math.round(cx - S),   Math.round(cy - 3*S + legSwing),  S, 3*S);
-  ctx.fillRect(Math.round(cx + S*2), Math.round(cy - 3*S - legSwing), S, 3*S);
-  // Feet
-  ctx.fillRect(Math.round(cx - 2*S), Math.round(cy - S), S, S);
-  ctx.fillRect(Math.round(cx + S),   Math.round(cy - S), S, S);
+  ctx.fillRect(Math.round(bx - S),   Math.round(cy - 8*S - bob), S, 4*S);
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 8*S - bob), S, 4*S);
+  // Lower leg (scaled)
+  ctx.fillStyle = legC;
+  ctx.fillRect(Math.round(bx - S),   Math.round(leg1y - bob), S, Math.round(cy - leg1y + bob));
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(leg2y - bob), S, Math.round(cy - leg2y + bob));
+  // Scale marks
+  ctx.fillStyle = scaleC;
+  ctx.fillRect(Math.round(bx - S),   Math.round(leg1y + S - bob), S, S);
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(leg2y + S - bob), S, S);
+  // Feet — 3 toes forward, 1 back
+  ctx.fillStyle = legC;
+  ctx.fillRect(Math.round(bx - 3*S), Math.round(cy - S), 2*S, S); // back toe
+  ctx.fillRect(Math.round(bx - S),   Math.round(cy - S), S,   S);
+  ctx.fillRect(Math.round(bx),       Math.round(cy - S), 3*S, S); // front toes
+  ctx.fillRect(Math.round(bx + 3*S), Math.round(cy - S), S,   S);
+  ctx.fillRect(Math.round(bx + 3*S), Math.round(cy - S + S*0.5), 2*S, S);
+  // Toenail dots
+  ctx.fillStyle = scaleC;
+  ctx.fillRect(Math.round(bx - 3*S), Math.round(cy - S), S, S);
+  ctx.fillRect(Math.round(bx + 4*S), Math.round(cy),     S, S);
 
-  // Body (round)
-  ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(cx - 3*S), Math.round(cy - 8*S - bob), 6*S, 5*S);
-  // Wing
-  ctx.fillStyle = wingC;
-  ctx.fillRect(Math.round(cx - 2*S), Math.round(cy - 7*S - bob +
-    (ch.fleeing ? Math.sin(ch.walkFrame*2)*2*S : 0)), 4*S, 3*S);
-  // Tail feathers
-  ctx.fillStyle = wingC;
-  ctx.fillRect(Math.round(cx - 5*S), Math.round(cy - 9*S - bob), 2*S, 3*S);
-  ctx.fillRect(Math.round(cx - 6*S), Math.round(cy - 11*S - bob), S, 2*S);
-  // Head
-  ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(cx + 2*S), Math.round(cy - 12*S - bob), 4*S, 4*S);
-  // Comb
+  // ---- TAIL FEATHERS (drawn behind body) ----
+  // Fan of 3 feathers
+  ctx.fillStyle = tailSh;
+  ctx.fillRect(Math.round(bx - 7*S), Math.round(cy - 12*S - bob), 2*S, 6*S);
+  ctx.fillRect(Math.round(bx - 8*S), Math.round(cy - 15*S - bob), 2*S, 4*S);
+  ctx.fillRect(Math.round(bx - 6*S), Math.round(cy - 16*S - bob), 2*S, 3*S);
+  ctx.fillStyle = tailHi;
+  ctx.fillRect(Math.round(bx - 7*S), Math.round(cy - 14*S - bob), S,   4*S);
+  ctx.fillRect(Math.round(bx - 8*S), Math.round(cy - 16*S - bob), S,   3*S);
+  ctx.fillRect(Math.round(bx - 6*S), Math.round(cy - 17*S - bob), S,   2*S);
+
+  // ---- BODY ----
+  // Shadow bottom
+  ctx.fillStyle = bodySh;
+  ctx.fillRect(Math.round(bx - 5*S), Math.round(cy - 9*S  - bob), 8*S, 2*S);
+  // Mid body
+  ctx.fillStyle = bodyMid;
+  ctx.fillRect(Math.round(bx - 5*S), Math.round(cy - 13*S - bob), 8*S, 5*S);
+  // Round top highlight
+  ctx.fillStyle = bodyHi;
+  ctx.fillRect(Math.round(bx - 4*S), Math.round(cy - 15*S - bob), 6*S, 3*S);
+  ctx.fillRect(Math.round(bx - 3*S), Math.round(cy - 16*S - bob), 4*S, S);
+  // Breast (lighter)
+  ctx.fillStyle = bodyHi;
+  ctx.fillRect(Math.round(bx - 2*S), Math.round(cy - 11*S - bob), 3*S, 3*S);
+
+  // ---- WING ----
+  ctx.fillStyle = wingHi;
+  ctx.fillRect(Math.round(bx - 4*S), Math.round(cy - 14*S - bob + wingFlap), 6*S, 4*S);
+  ctx.fillStyle = wingSh;
+  ctx.fillRect(Math.round(bx - 4*S), Math.round(cy - 11*S - bob + wingFlap), 6*S, 2*S);
+  // Wing feather tips
+  ctx.fillStyle = wingSh;
+  ctx.fillRect(Math.round(bx - 4*S), Math.round(cy - 10*S - bob + wingFlap), S, 2*S);
+  ctx.fillRect(Math.round(bx - 3*S), Math.round(cy - 10*S - bob + wingFlap), S, S);
+  ctx.fillRect(Math.round(bx + S),   Math.round(cy - 10*S - bob + wingFlap), S, 2*S);
+
+  // ---- NECK ----
+  ctx.fillStyle = bodyMid;
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 18*S - bob), 3*S, 4*S);
+  ctx.fillStyle = bodyHi;
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 18*S - bob), 2*S, 4*S);
+
+  // ---- HEAD ----
+  // Head base
+  ctx.fillStyle = bodyMid;
+  ctx.fillRect(Math.round(bx + S),   Math.round(cy - 22*S - bob), 5*S, 4*S);
+  // Head highlights
+  ctx.fillStyle = bodyHi;
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 23*S - bob), 3*S, 2*S);
+  ctx.fillRect(Math.round(bx + S),   Math.round(cy - 22*S - bob), S,   3*S);
+  // Face (cheek/ear patch — slightly different tone)
+  ctx.fillStyle = bodyMid;
+  ctx.fillRect(Math.round(bx + 4*S), Math.round(cy - 21*S - bob), 2*S, 2*S);
+
+  // ---- COMB (3-pointed) ----
   ctx.fillStyle = combC;
-  ctx.fillRect(Math.round(cx + 3*S), Math.round(cy - 15*S - bob), S, 3*S);
-  ctx.fillRect(Math.round(cx + 4*S), Math.round(cy - 14*S - bob), S, 2*S);
-  // Wattle
-  ctx.fillStyle = combC;
-  ctx.fillRect(Math.round(cx + 5*S), Math.round(cy - 11*S - bob), S, 2*S);
-  // Beak
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 26*S - bob), S,   3*S);
+  ctx.fillRect(Math.round(bx + 3*S), Math.round(cy - 25*S - bob), S,   3*S);
+  ctx.fillRect(Math.round(bx + 4*S), Math.round(cy - 24*S - bob), S,   2*S);
+  // Comb base connecting
+  ctx.fillRect(Math.round(bx + 2*S), Math.round(cy - 23*S - bob), 3*S, S);
+
+  // ---- WATTLE (red under beak) ----
+  ctx.fillStyle = wattleC;
+  ctx.fillRect(Math.round(bx + 5*S), Math.round(cy - 20*S - bob), S,   2*S);
+  ctx.fillRect(Math.round(bx + 5*S), Math.round(cy - 19*S - bob), 2*S, S);
+
+  // ---- BEAK ----
   ctx.fillStyle = beakC;
-  ctx.fillRect(Math.round(cx + 6*S), Math.round(cy - 12*S - bob), 2*S, S);
+  ctx.fillRect(Math.round(bx + 6*S), Math.round(cy - 22*S - bob), 2*S, S);
+  // Open beak when clucking
   if (ch.clucking) {
-    ctx.fillRect(Math.round(cx + 6*S), Math.round(cy - 11*S - bob), 2*S, S);
+    ctx.fillStyle = beakC;
+    ctx.fillRect(Math.round(bx + 6*S), Math.round(cy - 21*S - bob), 2*S, S);
+    ctx.fillStyle = '#cc2020'; // inside mouth
+    ctx.fillRect(Math.round(bx + 6*S), Math.round(cy - 21*S - bob), S,   S);
   }
-  // Eye
+
+  // ---- EYE ----
   ctx.fillStyle = eyeC;
-  ctx.fillRect(Math.round(cx + 4*S), Math.round(cy - 13*S - bob), S, S);
+  ctx.fillRect(Math.round(bx + 3*S), Math.round(cy - 22*S - bob), 2*S, 2*S);
+  // Eye highlight
+  ctx.fillStyle = eyeHi;
+  ctx.fillRect(Math.round(bx + 4*S), Math.round(cy - 23*S - bob), S,   S);
 
   ctx.restore();
 }
@@ -716,7 +802,7 @@ function drawDog(period, nowMs) {
     targetX = fox.autoTarget;
   }
 
-  const foxSpeed = cursorActive ? 0.0022 : 0.0008;
+  const foxSpeed = cursorActive ? 0.0010 : 0.0004;
   const dx2 = targetX - fox.x;
   if (Math.abs(dx2) > 0.005) {
     fox.x += Math.sign(dx2) * Math.min(Math.abs(dx2), foxSpeed);
