@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moja Strona Startowa</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: pixelated;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: pixelated;
+  }
+  #overlay {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #time-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    image-rendering: pixelated;
+  }
+  #greeting {
+    font-size: 1.1rem;
+    margin-top: 4px;
+    letter-spacing: 2px;
+  }
+  #period-display {
+    font-size: 0.85rem;
+    margin-top: 2px;
+    opacity: 0.9;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="overlay">
+  <div id="time-display">00:00:00</div>
+  <div id="greeting">Dzień dobry!</div>
+  <div id="period-display">Ranek</div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+let W, H, SCALE;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  SCALE = Math.max(2, Math.floor(Math.min(W, H) / 200));
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Time helpers
+function getTimeFraction() {
+  const now = new Date();
+  return (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+}
+
+function getPeriod(h) {
+  if (h >= 5 && h < 8) return 'dawn';
+  if (h >= 8 && h < 12) return 'morning';
+  if (h >= 12 && h < 17) return 'day';
+  if (h >= 17 && h < 20) return 'evening';
+  if (h >= 20 && h < 22) return 'dusk';
+  return 'night';
+}
+
+// Color lerp
+function lerpColor(a, b, t) {
+  return [
+    Math.round(a[0] + (b[0]-a[0])*t),
+    Math.round(a[1] + (b[1]-a[1])*t),
+    Math.round(a[2] + (b[2]-a[2])*t)
+  ];
+}
+function rgb(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+// Sky palettes per period
+const skyPalettes = {
+  night:   { top: [5, 5, 25],     bottom: [10, 10, 40] },
+  dawn:    { top: [30, 20, 80],   bottom: [220, 100, 60] },
+  morning: { top: [80, 140, 220], bottom: [255, 200, 120] },
+  day:     { top: [60, 140, 255], bottom: [160, 210, 255] },
+  evening: { top: [20, 60, 160],  bottom: [255, 140, 60] },
+  dusk:    { top: [15, 20, 80],   bottom: [180, 80, 50] },
+};
+
+const groundColors = {
+  night:   [20, 35, 20],
+  dawn:    [35, 60, 30],
+  morning: [55, 100, 45],
+  day:     [70, 130, 50],
+  evening: [50, 90, 40],
+  dusk:    [30, 55, 25],
+};
+
+// Stars
+const stars = Array.from({length: 120}, () => ({
+  x: Math.random(),
+  y: Math.random() * 0.6,
+  r: Math.random() < 0.3 ? 2 : 1,
+  blink: Math.random() * Math.PI * 2,
+  speed: 0.5 + Math.random() * 1.5
+}));
+
+// Clouds
+const clouds = Array.from({length: 5}, (_, i) => ({
+  x: i * 0.22 + Math.random() * 0.1,
+  y: 0.08 + Math.random() * 0.15,
+  w: 4 + Math.floor(Math.random() * 4),
+  speed: 0.00003 + Math.random() * 0.00002,
+  alpha: 0.7 + Math.random() * 0.3
+}));
+
+// Birds
+const birds = Array.from({length: 6}, () => ({
+  x: Math.random(),
+  y: 0.1 + Math.random() * 0.25,
+  speed: 0.0001 + Math.random() * 0.0002,
+  flap: Math.random() * Math.PI * 2,
+  flapSpeed: 3 + Math.random() * 4,
+  size: 1 + Math.floor(Math.random() * 2)
+}));
+
+// Fireflies
+const fireflies = Array.from({length: 18}, () => ({
+  x: 0.05 + Math.random() * 0.9,
+  y: 0.5 + Math.random() * 0.4,
+  phase: Math.random() * Math.PI * 2,
+  speed: 0.2 + Math.random() * 0.3,
+  dx: (Math.random()-0.5) * 0.0002,
+  dy: (Math.random()-0.5) * 0.0001,
+}));
+
+// Wind offset for tree animation
+let windOffset = 0;
+let t = 0;
+
+// Pixel drawing helpers
+function px(x, y, color, size=1) {
+  ctx.fillStyle = typeof color === 'string' ? color : rgb(color);
+  ctx.fillRect(Math.round(x), Math.round(y), size*SCALE, size*SCALE);
+}
+
+function drawSky(period) {
+  const pal = skyPalettes[period];
+  const grad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
+  grad.addColorStop(0, rgb(pal.top));
+  grad.addColorStop(1, rgb(pal.bottom));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H * 0.65);
+}
+
+function drawStars(period, nowMs) {
+  let alpha = 0;
+  if (period === 'night') alpha = 1;
+  else if (period === 'dusk') alpha = 0.6;
+  else if (period === 'dawn') alpha = 0.3;
+  if (alpha <= 0) return;
+  for (const s of stars) {
+    const blink = 0.6 + 0.4 * Math.sin(nowMs * 0.001 * s.speed + s.blink);
+    ctx.globalAlpha = alpha * blink;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(Math.round(s.x * W), Math.round(s.y * H), s.r * SCALE, s.r * SCALE);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawMoon(period, nowMs) {
+  let alpha = 0;
+  if (period === 'night') alpha = 1;
+  else if (period === 'dusk') alpha = 0.5;
+  else if (period === 'dawn') alpha = 0.4;
+  if (alpha <= 0) return;
+  const mx = W * 0.75, my = H * 0.12;
+  const r = 4 * SCALE;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#FFFACD';
+  ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI*2); ctx.fill();
+  // crater
+  ctx.fillStyle = '#DDD090';
+  ctx.beginPath(); ctx.arc(mx + r*0.3, my - r*0.15, r*0.18, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx - r*0.2, my + r*0.3, r*0.12, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawSun(period, nowMs) {
+  let alpha = 0, sunY = H * 0.15;
+  if (period === 'day') { alpha = 1; sunY = H * 0.12; }
+  else if (period === 'morning') { alpha = 0.9; sunY = H * 0.18; }
+  else if (period === 'evening') { alpha = 0.9; sunY = H * 0.22; }
+  else if (period === 'dawn') { alpha = 0.7; sunY = H * 0.38; }
+  else if (period === 'dusk') { alpha = 0.5; sunY = H * 0.42; }
+  if (alpha <= 0) return;
+  const sx = W * 0.15, r = 5 * SCALE;
+  ctx.globalAlpha = alpha;
+  // Glow
+  const grd = ctx.createRadialGradient(sx, sunY, r*0.5, sx, sunY, r*2.5);
+  grd.addColorStop(0, 'rgba(255,240,100,0.5)');
+  grd.addColorStop(1, 'rgba(255,200,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(sx, sunY, r*2.5, 0, Math.PI*2); ctx.fill();
+  // Sun body
+  ctx.fillStyle = '#FFE040';
+  ctx.beginPath(); ctx.arc(sx, sunY, r, 0, Math.PI*2); ctx.fill();
+  // Pixel rays
+  ctx.fillStyle = '#FFD000';
+  const rayLen = 3 * SCALE;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i/8)*Math.PI*2 + nowMs*0.0005;
+    const rx1 = sx + Math.cos(angle) * (r+2);
+    const ry1 = sunY + Math.sin(angle) * (r+2);
+    const rx2 = sx + Math.cos(angle) * (r+2+rayLen);
+    const ry2 = sunY + Math.sin(angle) * (r+2+rayLen);
+    ctx.lineWidth = 2*SCALE;
+    ctx.strokeStyle = '#FFD000';
+    ctx.beginPath(); ctx.moveTo(rx1,ry1); ctx.lineTo(rx2,ry2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCloud(cloud, nowMs, alpha) {
+  if (alpha <= 0) return;
+  ctx.globalAlpha = cloud.alpha * alpha;
+  const cx = ((cloud.x + nowMs * cloud.speed) % 1.3 - 0.15) * W;
+  const cy = cloud.y * H;
+  const cw = cloud.w * 8 * SCALE;
+  const ch = 4 * SCALE;
+  ctx.fillStyle = '#fff';
+  // Pixelated cloud shape
+  const blocks = [
+    [0, ch*0.5, cw, ch],
+    [cw*0.15, 0, cw*0.5, ch],
+    [cw*0.5, ch*0.2, cw*0.35, ch*0.8],
+  ];
+  for (const [bx, by, bw, bh] of blocks) {
+    ctx.fillRect(Math.round(cx + bx), Math.round(cy + by), Math.round(bw), Math.round(bh));
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBirds(period, nowMs) {
+  let alpha = 0;
+  if (period === 'day') alpha = 1;
+  else if (period === 'morning' || period === 'evening') alpha = 0.7;
+  if (alpha <= 0) return;
+  ctx.globalAlpha = alpha;
+  for (const b of birds) {
+    const bx = ((b.x + nowMs * b.speed) % 1.2 - 0.1) * W;
+    const by = b.y * H;
+    const flap = Math.sin(nowMs * 0.001 * b.flapSpeed + b.flap);
+    const s = b.size * SCALE;
+    ctx.fillStyle = '#222';
+    // Simple pixel bird: two wing pixels
+    ctx.fillRect(Math.round(bx - s*2), Math.round(by + flap * s), s, s);
+    ctx.fillRect(Math.round(bx - s), Math.round(by + flap * s * 0.5), s, s);
+    ctx.fillRect(Math.round(bx), Math.round(by), s, s); // body
+    ctx.fillRect(Math.round(bx + s), Math.round(by + flap * s * 0.5), s, s);
+    ctx.fillRect(Math.round(bx + s*2), Math.round(by + flap * s), s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawGround(period) {
+  const gc = groundColors[period];
+  const groundY = H * 0.65;
+  // Main ground
+  ctx.fillStyle = rgb(gc);
+  ctx.fillRect(0, groundY, W, H - groundY);
+  // Darker bottom
+  const darker = [Math.max(0,gc[0]-15), Math.max(0,gc[1]-25), Math.max(0,gc[2]-10)];
+  ctx.fillStyle = rgb(darker);
+  ctx.fillRect(0, groundY + (H-groundY)*0.5, W, (H-groundY)*0.5);
+  // Grass pixel line
+  ctx.fillStyle = period === 'night' ? '#1a3a1a' : '#4aaa30';
+  for (let x = 0; x < W; x += SCALE) {
+    const h2 = (Math.sin(x * 0.05 + windOffset * 0.5) * 0.5 + 0.5) * 2 * SCALE;
+    ctx.fillRect(x, Math.round(groundY - h2), SCALE, Math.round(h2 + SCALE));
+  }
+}
+
+// Pixel art house
+function drawHouse(period) {
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const cx = W * 0.5;
+
+  // Colors
+  const isNight = period === 'night' || period === 'dusk';
+  const wallC   = isNight ? '#5a4030' : '#c87840';
+  const wallD   = isNight ? '#4a3020' : '#a06030';
+  const roofC   = isNight ? '#2a1a1a' : '#6a2020';
+  const roofD   = isNight ? '#1a0a0a' : '#4a1010';
+  const winC    = isNight ? '#ffee80' : '#80c8ff';
+  const doorC   = isNight ? '#3a2010' : '#7a4020';
+  const chimC   = isNight ? '#333333' : '#666666';
+
+  // House dimensions
+  const hw = 40 * S; // house width
+  const hh = 30 * S; // house height
+  const hx = cx - hw/2;
+  const hy = groundY - hh;
+
+  // Roof
+  const roofH = 20 * S;
+  ctx.fillStyle = roofC;
+  ctx.beginPath();
+  ctx.moveTo(cx, hy - roofH);
+  ctx.lineTo(hx + hw, hy);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
+  ctx.fill();
+
+  // Roof shadow
+  ctx.fillStyle = roofD;
+  ctx.beginPath();
+  ctx.moveTo(cx, hy - roofH);
+  ctx.lineTo(cx, hy);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
+  ctx.fill();
+
+  // Roof edge pixels
+  ctx.fillStyle = isNight ? '#1a0808' : '#3a0808';
+  for (let i = 0; i <= 40; i++) {
+    const px2 = hx + i * S;
+    const py2 = hy - (20 - i * 0.5) * S;
+    ctx.fillRect(Math.round(px2), Math.round(py2), S, S);
+    // Right side
+    const px3 = hx + hw - i * S;
+    ctx.fillRect(Math.round(px3), Math.round(py2), S, S);
+  }
+
+  // Chimney
+  const chimX = cx + 8 * S;
+  const chimW = 5 * S;
+  const chimH = 12 * S;
+  const chimY = hy - roofH * 0.55;
+  ctx.fillStyle = chimC;
+  ctx.fillRect(Math.round(chimX), Math.round(chimY - chimH + roofH*0.3), chimW, chimH);
+  ctx.fillStyle = '#444';
+  ctx.fillRect(Math.round(chimX - S), Math.round(chimY - chimH + roofH*0.3 - S), chimW + 2*S, 2*S);
+
+  // Smoke
+  if (isNight || period === 'dawn' || period === 'morning') {
+    const t2 = Date.now() * 0.001;
+    ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 5; i++) {
+      const sr = (2 + i) * S;
+      const sy2 = chimY - chimH + roofH*0.3 - i * 5 * S + Math.sin(t2 + i) * S;
+      const sx2 = chimX + chimW/2 + Math.sin(t2*0.7 + i*1.3) * 4 * S;
+      ctx.fillStyle = `rgba(${isNight?'200,200,200':'180,180,180'},${0.7-i*0.12})`;
+      ctx.beginPath(); ctx.arc(sx2, sy2, sr, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Walls
+  ctx.fillStyle = wallC;
+  ctx.fillRect(Math.round(hx), Math.round(hy), hw, hh);
+
+  // Wall shadow (right)
+  ctx.fillStyle = wallD;
+  ctx.fillRect(Math.round(hx + hw*0.6), Math.round(hy), hw*0.4, hh);
+
+  // Pixel brick pattern
+  ctx.fillStyle = isNight ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.15)';
+  for (let row = 0; row < 15; row++) {
+    const offset = (row % 2) * 5 * S;
+    for (let col = 0; col < 5; col++) {
+      ctx.fillRect(
+        Math.round(hx + col * 8 * S + offset),
+        Math.round(hy + row * 2 * S + S),
+        7 * S, S * 0.5
+      );
+    }
+  }
+
+  // Windows
+  function drawWindow(wx, wy, lit) {
+    const ww = 10 * S, wh = 10 * S;
+    ctx.fillStyle = '#3a2010';
+    ctx.fillRect(Math.round(wx - S), Math.round(wy - S), ww + 2*S, wh + 2*S);
+    if (lit) {
+      ctx.fillStyle = winC;
+      ctx.fillRect(Math.round(wx), Math.round(wy), ww, wh);
+      // Cross divider
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(Math.round(wx + ww/2 - S*0.5), Math.round(wy), S, wh);
+      ctx.fillRect(Math.round(wx), Math.round(wy + wh/2 - S*0.5), ww, S);
+      // Light glow at night
+      if (isNight) {
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = '#ffee80';
+        ctx.fillRect(Math.round(wx - 4*S), Math.round(wy - 4*S), ww + 8*S, wh + 8*S);
+        ctx.globalAlpha = 1;
+      }
+    } else {
+      ctx.fillStyle = '#1a3050';
+      ctx.fillRect(Math.round(wx), Math.round(wy), ww, wh);
+    }
+  }
+
+  drawWindow(hx + 5*S, hy + 8*S, isNight || period === 'dusk');
+  drawWindow(hx + hw - 15*S, hy + 8*S, isNight);
+
+  // Door
+  const dw = 10*S, dh = 16*S;
+  const dx = cx - dw/2, dy = groundY - dh;
+  ctx.fillStyle = '#2a1008';
+  ctx.fillRect(Math.round(dx - S), Math.round(dy - S), dw + 2*S, dh + 2*S);
+  ctx.fillStyle = doorC;
+  ctx.fillRect(Math.round(dx), Math.round(dy), dw, dh);
+  // Door arch
+  ctx.fillStyle = isNight ? '#5a3018' : '#8a5028';
+  ctx.fillRect(Math.round(dx), Math.round(dy), dw, dh*0.3);
+  // Doorknob
+  ctx.fillStyle = '#FFD700';
+  ctx.fillRect(Math.round(dx + dw*0.75), Math.round(dy + dh*0.5), S, S);
+  // Step
+  ctx.fillStyle = isNight ? '#3a3030' : '#8a7060';
+  ctx.fillRect(Math.round(dx - 2*S), Math.round(groundY - 2*S), dw + 4*S, 2*S);
+}
+
+// Pixel tree
+function drawTree(tx, baseY, h, period, wobble) {
+  const S = SCALE;
+  const isNight = period === 'night' || period === 'dusk';
+  const trunkC = isNight ? '#3a2010' : '#6a3a10';
+  const leafC  = isNight ? '#0a2a0a' : '#228822';
+  const leafD  = isNight ? '#071507' : '#185018';
+  const leafH  = isNight ? '#0f3a0f' : '#2aaa2a';
+
+  const tw = 3 * S;
+  const th = h * S;
+  const trunkX = tx - tw/2;
+
+  // Trunk
+  ctx.fillStyle = trunkC;
+  ctx.fillRect(Math.round(trunkX), Math.round(baseY - th*0.45), tw, Math.round(th*0.45));
+
+  // Foliage (layered triangles, pixel style)
+  const layers = 3;
+  for (let l = 0; l < layers; l++) {
+    const lh = th * (0.45 - l * 0.08);
+    const lw = tw * (4 - l * 0.5) + (layers - l) * 3 * S;
+    const ly = baseY - th*0.45 - l * th*0.22 + Math.sin(Date.now()*0.001*0.5 + wobble) * wobble * S;
+
+    ctx.fillStyle = l === 1 ? leafD : leafC;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(tx + Math.sin(Date.now()*0.001*0.7+wobble)*wobble*S*0.5), Math.round(ly - lh));
+    ctx.lineTo(Math.round(tx + lw/2), Math.round(ly));
+    ctx.lineTo(Math.round(tx - lw/2), Math.round(ly));
+    ctx.closePath();
+    ctx.fill();
+
+    // Highlight
+    ctx.fillStyle = leafH;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(tx + Math.sin(Date.now()*0.001*0.7+wobble)*wobble*S*0.5), Math.round(ly - lh));
+    ctx.lineTo(Math.round(tx), Math.round(ly));
+    ctx.lineTo(Math.round(tx - lw * 0.2), Math.round(ly));
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+// Bush
+function drawBush(bx, by, size, period) {
+  const S = SCALE;
+  const isNight = period === 'night' || period === 'dusk';
+  const c1 = isNight ? '#0a2a0a' : '#228830';
+  const c2 = isNight ? '#071507' : '#185020';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = i === 1 ? c2 : c1;
+    ctx.beginPath();
+    ctx.arc(bx + (i-1)*size*S*0.7, by, size*S*(0.7+i*0.1), 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+// Fireflies
+function drawFireflies(period, nowMs) {
+  let alpha = 0;
+  if (period === 'night') alpha = 1;
+  else if (period === 'dusk') alpha = 0.5;
+  if (alpha <= 0) return;
+  for (const f of fireflies) {
+    f.x = ((f.x + f.dx + 1) % 1);
+    f.y = Math.max(0.5, Math.min(0.92, f.y + f.dy + Math.sin(nowMs*0.001*f.speed + f.phase)*0.0005));
+    const glow = 0.4 + 0.6 * Math.sin(nowMs * 0.003 * f.speed + f.phase);
+    ctx.globalAlpha = alpha * glow;
+    ctx.fillStyle = '#aaff44';
+    const fx = f.x * W, fy = f.y * H;
+    ctx.fillRect(Math.round(fx), Math.round(fy), SCALE, SCALE);
+    // Glow
+    ctx.globalAlpha = alpha * glow * 0.3;
+    ctx.fillStyle = '#88ff22';
+    ctx.fillRect(Math.round(fx - SCALE), Math.round(fy - SCALE), SCALE*3, SCALE*3);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Pixel path
+function drawPath(period) {
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const cx = W * 0.5;
+  const isNight = period === 'night' || period === 'dusk';
+  ctx.fillStyle = isNight ? '#4a3828' : '#c8a878';
+  // Path tiles
+  const pathW = 12 * S;
+  for (let i = 0; i < 8; i++) {
+    const pw = pathW + i * 2 * S;
+    ctx.fillStyle = isNight ? (i%2?'#3a2818':'#4a3828') : (i%2?'#b89868':'#c8a878');
+    ctx.fillRect(Math.round(cx - pw/2), Math.round(groundY + i * 5 * S), pw, 5 * S);
+  }
+}
+
+// Fence
+function drawFence(period) {
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const isNight = period === 'night' || period === 'dusk';
+  const fc = isNight ? '#4a3820' : '#d4a060';
+  const posts = 30;
+  const startX = W * 0.05;
+  const endX   = W * 0.95;
+  const step   = (endX - startX) / posts;
+
+  ctx.fillStyle = fc;
+  // Horizontal rails
+  ctx.fillRect(Math.round(startX), Math.round(groundY - 7*S), Math.round(endX-startX), S);
+  ctx.fillRect(Math.round(startX), Math.round(groundY - 4*S), Math.round(endX-startX), S);
+  // Posts
+  for (let i = 0; i <= posts; i++) {
+    const px2 = startX + i * step;
+    ctx.fillRect(Math.round(px2), Math.round(groundY - 10*S), S*2, 12*S);
+    // Pointed top
+    ctx.fillRect(Math.round(px2 + S*0.5), Math.round(groundY - 12*S), S, 2*S);
+  }
+}
+
+// UI overlay update
+function updateUI(period, hour, min, sec) {
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('time-display').textContent = `${pad(hour)}:${pad(min)}:${pad(sec)}`;
+
+  const greetings = {
+    night:   'Dobranoc!', dawn: 'Dzień dobry!',
+    morning: 'Dzień dobry!', day: 'Miłego dnia!',
+    evening: 'Dobry wieczór!', dusk: 'Dobry wieczór!'
+  };
+  const periods = {
+    night: 'Noc', dawn: 'Świt', morning: 'Ranek',
+    day: 'Dzień', evening: 'Wieczór', dusk: 'Zmierzch'
+  };
+  document.getElementById('greeting').textContent = greetings[period];
+  document.getElementById('period-display').textContent = periods[period];
+
+  // Text color
+  const light = period === 'day' || period === 'morning';
+  const el = document.getElementById('overlay');
+  el.style.color = light ? '#fff' : '#fff';
+}
+
+// Main draw
+function draw(nowMs) {
+  const now = new Date();
+  const hour = now.getHours(), min = now.getMinutes(), sec = now.getSeconds();
+  const period = getPeriod(hour);
+
+  windOffset = nowMs * 0.0005;
+  t = nowMs * 0.001;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky
+  drawSky(period);
+  drawStars(period, nowMs);
+  drawMoon(period, nowMs);
+  drawSun(period, nowMs);
+
+  // Clouds
+  const cloudAlpha = period === 'day' ? 1 : period === 'morning' || period === 'evening' ? 0.6 : period === 'dawn' ? 0.4 : 0;
+  for (const c of clouds) drawCloud(c, nowMs, cloudAlpha);
+
+  drawBirds(period, nowMs);
+  drawGround(period);
+  drawPath(period);
+  drawFence(period);
+
+  // Trees (background)
+  const groundY = H * 0.65;
+  drawTree(W*0.12, groundY, 45, period, 1.2);
+  drawTree(W*0.18, groundY, 38, period, 0.8);
+  drawTree(W*0.82, groundY, 42, period, 1.0);
+  drawTree(W*0.88, groundY, 35, period, 1.5);
+  drawTree(W*0.72, groundY, 40, period, 0.9);
+  drawTree(W*0.28, groundY, 36, period, 1.3);
+
+  // Bushes near house
+  drawBush(W*0.38, groundY, 5, period);
+  drawBush(W*0.62, groundY, 4, period);
+  drawBush(W*0.35, groundY, 3, period);
+  drawBush(W*0.65, groundY, 3.5, period);
+
+  // House
+  drawHouse(period);
+
+  // Fireflies
+  drawFireflies(period, nowMs);
+
+  // Update UI
+  updateUI(period, hour, min, sec);
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
