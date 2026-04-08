@@ -157,11 +157,11 @@ const fireflies = Array.from({length: 18}, () => ({
 let windOffset = 0;
 let t = 0;
 
-// Dog state
-const dog = {
+// Fox state
+const fox = {
   x: 0.35,
   dir: 1,        // 1 = right, -1 = left
-  speed: 0.00008,
+  speed: 0.00010,
   sitting: false,
   sitTimer: 0,
   sitDuration: 0,
@@ -573,36 +573,34 @@ function drawFence(period) {
   }
 }
 
-// Pixel art dog
+// Pixel art fox
 function drawDog(period, nowMs) {
   const S = SCALE;
   const groundY = H * 0.65;
   const isNight = period === 'night' || period === 'dusk';
 
-  // Update dog movement
-  if (dog.sitting) {
-    dog.sitTimer += 16;
-    if (dog.sitTimer >= dog.sitDuration) {
-      dog.sitting = false;
-      dog.sitTimer = 0;
+  // Update fox movement
+  if (fox.sitting) {
+    fox.sitTimer += 16;
+    if (fox.sitTimer >= fox.sitDuration) {
+      fox.sitting = false;
+      fox.sitTimer = 0;
     }
   } else {
-    dog.x += dog.speed * dog.dir;
-    dog.walkFrame = nowMs * 0.008;
-    // Bounce between fence bounds
-    if (dog.x > 0.68) { dog.dir = -1; dog.x = 0.68; }
-    if (dog.x < 0.32) { dog.dir = 1;  dog.x = 0.32; }
-    // Random sit
+    fox.x += fox.speed * fox.dir;
+    fox.walkFrame = nowMs * 0.009;
+    if (fox.x > 0.68) { fox.dir = -1; fox.x = 0.68; }
+    if (fox.x < 0.32) { fox.dir =  1; fox.x = 0.32; }
     if (Math.random() < 0.0003) {
-      dog.sitting = true;
-      dog.sitTimer = 0;
-      dog.sitDuration = 1500 + Math.random() * 2000;
+      fox.sitting = true;
+      fox.sitTimer = 0;
+      fox.sitDuration = 1200 + Math.random() * 2500;
     }
   }
 
-  const dx = dog.x * W;
+  const dx = fox.x * W;
   const dy = groundY;
-  const flip = dog.dir === -1; // facing left
+  const flip = fox.dir === -1;
 
   ctx.save();
   if (flip) {
@@ -611,89 +609,120 @@ function drawDog(period, nowMs) {
     ctx.translate(-dx, 0);
   }
 
-  // Colors
-  const bodyC  = isNight ? '#5a3a20' : '#c87830';
-  const darkC  = isNight ? '#3a2010' : '#8a4818';
-  const noseC  = '#1a1a1a';
-  const eyeC   = isNight ? '#ffee80' : '#1a1a1a';
-  const tongueC = '#e05050';
+  // Fox colors
+  const bodyC  = isNight ? '#7a3010' : '#e05c10'; // orange-red
+  const bellyC = isNight ? '#5a4030' : '#f0c890'; // cream/white belly
+  const darkC  = isNight ? '#1a0a00' : '#2a1000'; // dark brown/black legs
+  const tailC  = isNight ? '#7a3010' : '#e05c10'; // same as body
+  const tailTip = isNight ? '#555555' : '#ffffff'; // white tail tip
+  const earIn  = isNight ? '#3a1010' : '#c03010'; // dark inner ear
+  const noseC  = '#1a0800';
+  const eyeC   = isNight ? '#ffcc00' : '#2a1800'; // yellow glow at night
 
-  const leg = dog.sitting ? 0 : Math.sin(dog.walkFrame) * 1.5 * S;
-  const leg2 = dog.sitting ? 0 : Math.sin(dog.walkFrame + Math.PI) * 1.5 * S;
+  const leg  = fox.sitting ? 0 : Math.sin(fox.walkFrame) * 1.5 * S;
+  const leg2 = fox.sitting ? 0 : Math.sin(fox.walkFrame + Math.PI) * 1.5 * S;
 
-  if (dog.sitting) {
-    // Sitting pose
+  if (fox.sitting) {
+    // === SITTING ===
+    // Tail curled around (big bushy)
+    ctx.fillStyle = tailC;
+    ctx.fillRect(Math.round(dx - 8*S), Math.round(dy - 6*S), 4*S, 5*S);
+    ctx.fillRect(Math.round(dx - 7*S), Math.round(dy - 8*S), 3*S, 3*S);
+    ctx.fillStyle = tailTip;
+    ctx.fillRect(Math.round(dx - 8*S), Math.round(dy - 8*S), 2*S, 2*S);
+    // Haunches
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx - 5*S), Math.round(dy - 5*S), 4*S, 5*S);
     // Body
     ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 4*S), Math.round(dy - 8*S), 8*S, 6*S);
-    // Head
-    ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 13*S), 6*S, 5*S);
-    // Snout
+    ctx.fillRect(Math.round(dx - 4*S), Math.round(dy - 9*S), 7*S, 5*S);
+    // Belly
+    ctx.fillStyle = bellyC;
+    ctx.fillRect(Math.round(dx - 2*S), Math.round(dy - 8*S), 4*S, 4*S);
+    // Front paws
     ctx.fillStyle = darkC;
-    ctx.fillRect(Math.round(dx + 6*S), Math.round(dy - 11*S), 3*S, 3*S);
+    ctx.fillRect(Math.round(dx - 2*S), Math.round(dy - 2*S), 2*S, 3*S);
+    ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 2*S), 2*S, 3*S);
+    // Neck
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx + 1*S), Math.round(dy - 13*S), 3*S, 5*S);
+    // Head (pointed fox face)
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx), Math.round(dy - 17*S), 6*S, 5*S);
+    // Pointed ears
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx + S), Math.round(dy - 20*S), 2*S, 3*S);
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 20*S), 2*S, 3*S);
+    ctx.fillStyle = earIn;
+    ctx.fillRect(Math.round(dx + S), Math.round(dy - 19*S), S, 2*S);
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 19*S), S, 2*S);
+    // Long pointed snout
+    ctx.fillStyle = bellyC;
+    ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 14*S), 3*S, 2*S);
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 15*S), 3*S, 2*S);
+    ctx.fillRect(Math.round(dx + 6*S), Math.round(dy - 14*S), 2*S, 2*S);
     // Nose
     ctx.fillStyle = noseC;
-    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 11*S), S, S);
+    ctx.fillRect(Math.round(dx + 7*S), Math.round(dy - 14*S), S, S);
     // Eye
     ctx.fillStyle = eyeC;
-    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 12*S), S, S);
-    // Ear
-    ctx.fillStyle = darkC;
-    ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 15*S), 2*S, 3*S);
-    // Tail (up when sitting)
-    ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 4*S), Math.round(dy - 12*S), 2*S, 5*S);
-    ctx.fillRect(Math.round(dx - 6*S), Math.round(dy - 14*S), 2*S, 3*S);
-    // Front paws
-    ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 3*S), Math.round(dy - 2*S), 2*S, 3*S);
-    ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 2*S), 2*S, 3*S);
-    // Back (haunches)
-    ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 5*S), Math.round(dy - 4*S), 4*S, 5*S);
+    ctx.fillRect(Math.round(dx + 3*S), Math.round(dy - 16*S), S, S);
+
   } else {
-    // Walking pose
-    // Back legs
+    // === WALKING ===
+    // Back legs (dark)
     ctx.fillStyle = darkC;
     ctx.fillRect(Math.round(dx - 5*S), Math.round(dy - 4*S + leg),  2*S, 4*S + Math.abs(leg));
     ctx.fillRect(Math.round(dx - 2*S), Math.round(dy - 4*S + leg2), 2*S, 4*S + Math.abs(leg2));
     // Body
     ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 6*S), Math.round(dy - 8*S), 10*S, 5*S);
-    // Front legs
+    ctx.fillRect(Math.round(dx - 7*S), Math.round(dy - 9*S), 11*S, 5*S);
+    // Belly stripe
+    ctx.fillStyle = bellyC;
+    ctx.fillRect(Math.round(dx - 4*S), Math.round(dy - 8*S), 6*S, 3*S);
+    // Front legs (dark)
     ctx.fillStyle = darkC;
     ctx.fillRect(Math.round(dx + 2*S), Math.round(dy - 4*S + leg2), 2*S, 4*S + Math.abs(leg2));
     ctx.fillRect(Math.round(dx + 5*S), Math.round(dy - 4*S + leg),  2*S, 4*S + Math.abs(leg));
+    // Bushy tail (sweeping)
+    const wag = Math.sin(nowMs * 0.005) * 3 * S;
+    ctx.fillStyle = tailC;
+    ctx.fillRect(Math.round(dx - 9*S), Math.round(dy - 8*S + wag*0.5), 3*S, 3*S);
+    ctx.fillRect(Math.round(dx - 11*S), Math.round(dy - 11*S + wag), 4*S, 3*S);
+    ctx.fillRect(Math.round(dx - 12*S), Math.round(dy - 14*S + wag*1.3), 3*S, 3*S);
+    // White tail tip
+    ctx.fillStyle = tailTip;
+    ctx.fillRect(Math.round(dx - 13*S), Math.round(dy - 16*S + wag*1.5), 3*S, 3*S);
     // Neck
     ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 11*S), 3*S, 4*S);
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 12*S), 3*S, 4*S);
     // Head
     ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx + 3*S), Math.round(dy - 14*S), 7*S, 6*S);
-    // Snout
-    ctx.fillStyle = darkC;
-    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 13*S), 4*S, 3*S);
+    ctx.fillRect(Math.round(dx + 3*S), Math.round(dy - 16*S), 7*S, 5*S);
+    // Pointed ears (tall triangular)
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 20*S), 2*S, 4*S);
+    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 20*S), 2*S, 4*S);
+    ctx.fillStyle = earIn;
+    ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 19*S), S, 3*S);
+    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 19*S), S, 3*S);
+    // Long pointed snout
+    ctx.fillStyle = bodyC;
+    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 14*S), 5*S, 3*S);
+    ctx.fillStyle = bellyC;
+    ctx.fillRect(Math.round(dx + 8*S), Math.round(dy - 13*S), 4*S, 2*S);
     // Nose
     ctx.fillStyle = noseC;
-    ctx.fillRect(Math.round(dx + 11*S), Math.round(dy - 13*S), S, S);
-    // Eye
+    ctx.fillRect(Math.round(dx + 12*S), Math.round(dy - 14*S), S, S);
+    // Eye (bright at night)
     ctx.fillStyle = eyeC;
-    ctx.fillRect(Math.round(dx + 5*S), Math.round(dy - 13*S), S, S);
-    // Ear (floppy)
-    ctx.fillStyle = darkC;
-    ctx.fillRect(Math.round(dx + 3*S), Math.round(dy - 16*S), 3*S, 2*S);
-    ctx.fillRect(Math.round(dx + 3*S), Math.round(dy - 14*S), 2*S, 3*S);
-    // Tail (wagging)
-    const wag = Math.sin(nowMs * 0.006) * 2 * S;
-    ctx.fillStyle = bodyC;
-    ctx.fillRect(Math.round(dx - 7*S), Math.round(dy - 9*S + wag), 2*S, 2*S);
-    ctx.fillRect(Math.round(dx - 9*S), Math.round(dy - 11*S + wag*1.3), 2*S, 2*S);
-    ctx.fillRect(Math.round(dx - 10*S), Math.round(dy - 13*S + wag*1.6), 2*S, 2*S);
-    // Tongue (panting during day)
-    if (period === 'day' || period === 'morning') {
-      ctx.fillStyle = tongueC;
-      ctx.fillRect(Math.round(dx + 10*S), Math.round(dy - 11*S), S, 2*S);
+    ctx.fillRect(Math.round(dx + 5*S), Math.round(dy - 15*S), S, S);
+    if (isNight) {
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillRect(Math.round(dx + 4*S), Math.round(dy - 16*S), 3*S, 3*S);
+      ctx.globalAlpha = 1;
     }
   }
 
