@@ -1,19 +1,25 @@
 // Pixel art kura
-function drawChicken(ch, period, nowMs, foxX) {
-  const S = SCALE * 0.65;
-  const groundY = H * 0.65;
+function drawChicken(ch, period, nowMs, foxX, foxY) {
+  const depthScale = 0.35 + ch.y * 0.85;
+  const S = SCALE * 0.65 * depthScale;
+  const cy = H * (0.62 + ch.y * 0.16);
   const isNight = period === 'night' || period === 'dusk';
 
-  ch.fleeing = Math.abs(ch.x - foxX) < 0.12;
+  ch.fleeing = Math.hypot(ch.x - foxX, ch.y - foxY) < 0.20;
   const spd = ch.fleeing ? ch.fleeSpeed : ch.speed;
   if (ch.fleeing) {
-    ch.dir = ch.x > foxX ? 1 : -1;
+    ch.dir  = ch.x > foxX ? 1 : -1;
+    ch.dirY = ch.y > foxY ? 1 : -1;
   } else {
-    if (Math.random() < 0.001) ch.dir *= -1;
+    if (Math.random() < 0.001) ch.dir  *= -1;
+    if (Math.random() < 0.0008) ch.dirY *= -1;
   }
   ch.x += spd * ch.dir;
+  ch.y += spd * ch.dirY * 0.6;
   if (ch.x > 0.90) { ch.dir = -1; ch.x = 0.90; }
   if (ch.x < 0.08) { ch.dir =  1; ch.x = 0.08; }
+  if (ch.y > 0.92) { ch.dirY = -1; ch.y = 0.92; }
+  if (ch.y < 0.08) { ch.dirY =  1; ch.y = 0.08; }
   ch.walkFrame += ch.fleeing ? 0.22 : 0.07;
 
   ch.cluckTimer -= 16;
@@ -24,7 +30,6 @@ function drawChicken(ch, period, nowMs, foxX) {
   }
 
   const cx  = ch.x * W;
-  const cy  = groundY;
   const bob = ch.fleeing
     ? Math.abs(Math.sin(ch.walkFrame)) * 2.5 * S
     : Math.abs(Math.sin(ch.walkFrame * 0.5)) * 0.8 * S;
@@ -147,23 +152,31 @@ function drawChicken(ch, period, nowMs, foxX) {
 
 // Pixel art lis
 function drawDog(period, nowMs) {
-  const S = SCALE;
-  const groundY = H * 0.65;
+  const depthScale = 0.35 + fox.y * 0.85;
+  const S = SCALE * depthScale;
   const isNight = period === 'night' || period === 'dusk';
 
   const IDLE_MS = 2500;
   const cursorActive = cursor.x !== null && (Date.now() - cursor.lastMoved) < IDLE_MS;
-  let targetX;
+  let targetX, targetY;
   if (cursorActive) {
     targetX = Math.max(0.06, Math.min(0.92, cursor.x));
+    // Kursor Y: obszar sceny ~50%–85% ekranu → głębokość 0–1
+    const rawDepth = cursor.y !== null ? (cursor.y - 0.50) / 0.35 : fox.y;
+    targetY = Math.max(0.06, Math.min(0.92, rawDepth));
   } else if (tilt.active) {
     // Przechylenie telefonu (-45..45°) → pozycja lisa (0.06..0.92)
     targetX = Math.max(0.06, Math.min(0.92, (tilt.gamma + 45) / 90));
+    targetY = fox.autoTargetY;
   } else {
     if (Math.abs(fox.x - fox.autoTarget) < 0.02 || Math.random() < 0.002) {
       fox.autoTarget = 0.15 + Math.random() * 0.70;
     }
+    if (Math.abs(fox.y - fox.autoTargetY) < 0.02 || Math.random() < 0.0015) {
+      fox.autoTargetY = 0.10 + Math.random() * 0.80;
+    }
     targetX = fox.autoTarget;
+    targetY = fox.autoTargetY;
   }
 
   const foxSpeed = cursorActive ? 0.0010 : 0.0004;
@@ -174,8 +187,14 @@ function drawDog(period, nowMs) {
     fox.walkFrame = nowMs * 0.01;
   }
 
+  const foxSpeedY = cursorActive ? 0.0008 : 0.0003;
+  const dy2 = targetY - fox.y;
+  if (Math.abs(dy2) > 0.005) {
+    fox.y += Math.sign(dy2) * Math.min(Math.abs(dy2), foxSpeedY);
+  }
+
   const dx = fox.x * W;
-  const dy = groundY;
+  const dy = H * (0.62 + fox.y * 0.16);
   const flip = fox.dir === -1;
 
   ctx.save();
