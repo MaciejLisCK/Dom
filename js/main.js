@@ -88,7 +88,7 @@ canvas.addEventListener('touchmove', e => {
 const fox = { x: 0.35, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5 };
 
 // Kury
-const chickens = Array.from({length: 4}, (_, i) => ({
+const chickens = Array.from({length: 2}, (_, i) => ({
   x:            0.33 + i * 0.11,
   dir:          i % 2 === 0 ? 1 : -1,
   speed:        0.00004 + Math.random() * 0.00003,
