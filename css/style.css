@@ -1,0 +1,66 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+}
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+}
+#overlay {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  pointer-events: none;
+  z-index: 10;
+}
+#time-display {
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 4px;
+  image-rendering: pixelated;
+}
+#greeting {
+  font-size: 1.1rem;
+  margin-top: 4px;
+  letter-spacing: 2px;
+}
+#period-display {
+  font-size: 0.85rem;
+  margin-top: 2px;
+  opacity: 0.9;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+#weather-info {
+  font-size: 0.78rem;
+  margin-top: 4px;
+  opacity: 0.88;
+  letter-spacing: 2px;
+}
+#audio-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 20;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.35);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  user-select: none;
+}
+#audio-btn:hover { background: rgba(255,255,255,0.18); }
