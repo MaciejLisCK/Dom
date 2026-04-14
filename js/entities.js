@@ -1,6 +1,6 @@
 // Pixel art kura
 function drawChicken(ch, period, nowMs, foxX) {
-  const S = SCALE;
+  const S = SCALE * 0.65;
   const groundY = H * 0.65;
   const isNight = period === 'night' || period === 'dusk';
 
