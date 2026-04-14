@@ -1,5 +1,46 @@
-// Piastów, woj. mazowieckie – aktualna pogoda
-const WEATHER = { temp: 13, wind: 3, desc: 'Zachmurzenie zmienne', type: 'cloudy' };
+// Piastów, woj. mazowieckie – aktualna pogoda (pobierana z Open-Meteo)
+const WEATHER = { temp: '–', wind: '–', desc: 'Pobieranie…', type: 'cloudy' };
+
+// Mapowanie kodów WMO na typ pogody i opis po polsku
+function wmoToWeather(code) {
+  if (code === 0)                          return { type: 'clear',         desc: 'Bezchmurnie' };
+  if (code <= 2)                           return { type: 'partly_cloudy', desc: 'Częściowe zachmurzenie' };
+  if (code === 3)                          return { type: 'cloudy',        desc: 'Zachmurzenie całkowite' };
+  if (code <= 48)                          return { type: 'cloudy',        desc: 'Mgła' };
+  if (code <= 57)                          return { type: 'rainy',         desc: 'Mżawka' };
+  if (code <= 67)                          return { type: 'rainy',         desc: 'Deszcz' };
+  if (code <= 77)                          return { type: 'snowy',         desc: 'Śnieg' };
+  if (code <= 82)                          return { type: 'rainy',         desc: 'Przelotny deszcz' };
+  if (code <= 86)                          return { type: 'snowy',         desc: 'Przelotny śnieg' };
+  if (code <= 99)                          return { type: 'stormy',        desc: 'Burza' };
+  return { type: 'cloudy', desc: 'Zachmurzenie zmienne' };
+}
+
+async function fetchWeather() {
+  try {
+    const res = await fetch(
+      'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=52.19&longitude=20.84' +
+      '&current=temperature_2m,wind_speed_10m,weather_code' +
+      '&wind_speed_unit=ms&timezone=Europe%2FWarsaw'
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const c = data.current;
+    const { type, desc } = wmoToWeather(c.weather_code);
+    WEATHER.temp = Math.round(c.temperature_2m);
+    WEATHER.wind = Math.round(c.wind_speed_10m);
+    WEATHER.desc = desc;
+    WEATHER.type = type;
+    updateWeatherInfo();
+  } catch (e) {
+    // brak sieci – zostawiamy ostatnie wartości
+  }
+}
+
+// Pierwsze pobranie i odświeżanie co 30 minut
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
 
 // Dodatkowe chmury pogodowe – ciemniejsze i cięższe
 const weatherClouds = Array.from({length: 10}, (_, i) => ({
