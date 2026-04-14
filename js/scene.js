@@ -234,7 +234,7 @@ function drawHouse(period) {
   ctx.fillRect(Math.round(dx - 2 * S), Math.round(groundY - 2 * S), dw + 4 * S, 2 * S);
 }
 
-function drawTree(tx, baseY, h, period, wobble) {
+function drawTree(tx, baseY, h, period, wobble, tiltBias = 0) {
   const S = SCALE;
   const isNight = period === 'night' || period === 'dusk';
   const trunkC = isNight ? '#3a2010' : '#6a3a10';
@@ -248,16 +248,18 @@ function drawTree(tx, baseY, h, period, wobble) {
   for (let l = 0; l < layers; l++) {
     const lh = th * (0.45 - l * 0.08);
     const lw = tw * (4 - l * 0.5) + (layers - l) * 3 * S;
+    const layerTilt = tiltBias * ((l + 1) / layers) * S;
     const ly = baseY - th * 0.45 - l * th * 0.22 + Math.sin(Date.now() * 0.001 * 0.5 + wobble) * wobble * S;
+    const tipX = tx + Math.sin(Date.now() * 0.001 * 0.7 + wobble) * wobble * S * 0.5 + layerTilt;
     ctx.fillStyle = l === 1 ? leafD : leafC;
     ctx.beginPath();
-    ctx.moveTo(Math.round(tx + Math.sin(Date.now() * 0.001 * 0.7 + wobble) * wobble * S * 0.5), Math.round(ly - lh));
+    ctx.moveTo(Math.round(tipX), Math.round(ly - lh));
     ctx.lineTo(Math.round(tx + lw / 2), Math.round(ly));
     ctx.lineTo(Math.round(tx - lw / 2), Math.round(ly));
     ctx.closePath(); ctx.fill();
     ctx.fillStyle = leafH;
     ctx.beginPath();
-    ctx.moveTo(Math.round(tx + Math.sin(Date.now() * 0.001 * 0.7 + wobble) * wobble * S * 0.5), Math.round(ly - lh));
+    ctx.moveTo(Math.round(tipX), Math.round(ly - lh));
     ctx.lineTo(Math.round(tx), Math.round(ly));
     ctx.lineTo(Math.round(tx - lw * 0.2), Math.round(ly));
     ctx.closePath(); ctx.fill();
