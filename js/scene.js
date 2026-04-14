@@ -154,14 +154,6 @@ function drawHouse(period) {
   ctx.beginPath(); ctx.moveTo(cx, hy - roofH); ctx.lineTo(hx + hw, hy); ctx.lineTo(hx, hy); ctx.closePath(); ctx.fill();
   ctx.fillStyle = roofD;
   ctx.beginPath(); ctx.moveTo(cx, hy - roofH); ctx.lineTo(cx, hy); ctx.lineTo(hx, hy); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = isNight ? '#1a0808' : '#3a0808';
-  for (let i = 0; i <= 40; i++) {
-    const px2 = hx + i * S;
-    const py2 = hy - (20 - i * 0.5) * S;
-    ctx.fillRect(Math.round(px2), Math.round(py2), S, S);
-    ctx.fillRect(Math.round(hx + hw - i * S), Math.round(py2), S, S);
-  }
-
   // Chimney
   const chimX = cx + 8 * S, chimW = 5 * S, chimH = 12 * S, chimY = hy - roofH * 0.55;
   ctx.fillStyle = chimC;
