@@ -166,7 +166,11 @@ function drawDog(period, nowMs) {
     targetY = Math.max(0.06, Math.min(0.92, rawDepth));
   } else if (tilt.active) {
     // Przechylenie telefonu (-45..45°) → pozycja lisa (0.06..0.92)
-    targetX = Math.max(0.06, Math.min(0.92, (tilt.gamma + 45) / 90));
+    // Strefa martwa 5° eliminuje drgania przy trzymaniu prosto
+    const DEAD = 5, MAX = 45;
+    const absG = Math.abs(tilt.gamma);
+    const norm = absG < DEAD ? 0 : Math.sign(tilt.gamma) * (absG - DEAD) / (MAX - DEAD);
+    targetX = Math.max(0.06, Math.min(0.92, 0.5 + norm * 0.43));
     targetY = fox.autoTargetY;
   } else {
     if (Math.abs(fox.x - fox.autoTarget) < 0.02 || Math.random() < 0.002) {
@@ -179,7 +183,7 @@ function drawDog(period, nowMs) {
     targetY = fox.autoTargetY;
   }
 
-  const foxSpeed = cursorActive ? 0.0010 : 0.0004;
+  const foxSpeed = cursorActive ? 0.0010 : tilt.active ? 0.0007 : 0.0004;
   const dx2 = targetX - fox.x;
   if (Math.abs(dx2) > 0.005) {
     fox.x += Math.sign(dx2) * Math.min(Math.abs(dx2), foxSpeed);

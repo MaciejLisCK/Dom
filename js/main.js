@@ -98,9 +98,11 @@ canvas.addEventListener('touchmove', e => {
 
 // Przechylenie urządzenia (mobilne)
 const tilt = { gamma: 0, active: false };
+const TILT_ALPHA = 0.12; // współczynnik wygładzania (0=brak reakcji, 1=brak wygładzania)
 window.addEventListener('deviceorientation', e => {
   if (e.gamma !== null) {
-    tilt.gamma = Math.max(-45, Math.min(45, e.gamma));
+    const raw = Math.max(-45, Math.min(45, e.gamma));
+    tilt.gamma += TILT_ALPHA * (raw - tilt.gamma); // filtr dolnoprzepustowy (EMA)
     tilt.active = true;
   }
 }, { passive: true });
