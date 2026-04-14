@@ -158,7 +158,7 @@ function draw(nowMs) {
 
   // Drzewa
   const groundY = H * 0.65;
-  const tiltBias = tilt.active ? (tilt.gamma / 45) * 8 : 0;
+  const tiltBias = tilt.active ? -(tilt.gamma / 45) * 8 : 0;
   drawTree(W * 0.12, groundY, 45, period, 1.2, tiltBias);
   drawTree(W * 0.18, groundY, 38, period, 0.8, tiltBias);
   drawTree(W * 0.82, groundY, 42, period, 1.0, tiltBias);
