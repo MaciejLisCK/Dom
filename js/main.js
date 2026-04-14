@@ -73,9 +73,9 @@ let windOffset = 0;
 let t = 0;
 
 // Śledzenie kursora / dotyku
-const cursor = { x: null, lastMoved: 0 };
+const cursor = { x: null, y: null, lastMoved: 0 };
 canvas.addEventListener('mousemove', e => {
-  cursor.x = e.clientX / W; cursor.lastMoved = Date.now();
+  cursor.x = e.clientX / W; cursor.y = e.clientY / H; cursor.lastMoved = Date.now();
 });
 
 let tiltPermissionRequested = false;
@@ -89,11 +89,11 @@ function requestTiltPermission() {
 }
 
 canvas.addEventListener('touchstart', e => {
-  cursor.x = e.touches[0].clientX / W; cursor.lastMoved = Date.now();
+  cursor.x = e.touches[0].clientX / W; cursor.y = e.touches[0].clientY / H; cursor.lastMoved = Date.now();
   requestTiltPermission();
 }, { passive: true });
 canvas.addEventListener('touchmove', e => {
-  cursor.x = e.touches[0].clientX / W; cursor.lastMoved = Date.now();
+  cursor.x = e.touches[0].clientX / W; cursor.y = e.touches[0].clientY / H; cursor.lastMoved = Date.now();
 }, { passive: true });
 
 // Przechylenie urządzenia (mobilne)
@@ -106,12 +106,14 @@ window.addEventListener('deviceorientation', e => {
 }, { passive: true });
 
 // Stan lisa
-const fox = { x: 0.35, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5 };
+const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5 };
 
 // Kury
 const chickens = Array.from({length: 2}, (_, i) => ({
   x:            0.33 + i * 0.11,
+  y:            0.25 + i * 0.45,
   dir:          i % 2 === 0 ? 1 : -1,
+  dirY:         i % 2 === 0 ? 1 : -1,
   speed:        0.00004 + Math.random() * 0.00003,
   fleeSpeed:    0.00018 + Math.random() * 0.00008,
   fleeing:      false,
@@ -170,9 +172,20 @@ function draw(nowMs) {
 
   drawHouse(period);
 
-  // Kury (przed lisem żeby lis był na wierzchu)
-  for (const ch of chickens) drawChicken(ch, period, nowMs, fox.x);
-  drawDog(period, nowMs);
+  // Kury i lis – rysowanie w kolejności głębokości (dalej = najpierw)
+  const allEntities = [
+    ...chickens.map(ch => ({ kind: 'chicken', ref: ch })),
+    { kind: 'fox' },
+  ];
+  allEntities.sort((a, b) => {
+    const ya = a.kind === 'fox' ? fox.y : a.ref.y;
+    const yb = b.kind === 'fox' ? fox.y : b.ref.y;
+    return ya - yb;
+  });
+  for (const e of allEntities) {
+    if (e.kind === 'chicken') drawChicken(e.ref, period, nowMs, fox.x, fox.y);
+    else drawDog(period, nowMs);
+  }
 
   drawFireflies(period, nowMs);
   updateUI(period, hour, min, sec);
