@@ -1,11 +1,28 @@
 // Web Audio API – muzyka ambient + odgłosy natury
-// Użytkownik musi kliknąć ♪ (blokada autoplay przeglądarki)
+// Dźwięk włączony domyślnie – inicjalizacja przy pierwszej interakcji (wymóg przeglądarki)
 
 let audioCtx   = null;
 let masterGain = null;
-let audioOn    = false;
+let audioOn    = true;
 let birdTimer  = null;
 let musicTimer = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0;
+  masterGain.connect(audioCtx.destination);
+  startWind();
+  masterGain.gain.linearRampToValueAtTime(0.65, audioCtx.currentTime + 1.0);
+  scheduleBird();
+  scheduleNote();
+}
+
+// Automatyczny start przy pierwszej interakcji użytkownika
+['click', 'touchstart', 'keydown'].forEach(evt => {
+  document.addEventListener(evt, () => { if (audioOn) initAudio(); }, { once: true });
+});
 
 function toggleAudio() {
   audioOn = !audioOn;
