@@ -16,6 +16,15 @@ function updateUI(period, hour, min, sec) {
 }
 
 function updateWeatherInfo() {
+  const icons = {
+    clear:         '☀',
+    partly_cloudy: '⛅',
+    cloudy:        '☁',
+    rainy:         '🌧',
+    snowy:         '❄',
+    stormy:        '⛈',
+  };
+  const icon = icons[WEATHER.type] || '☁';
   document.getElementById('weather-info').textContent =
-    `Piastów ☁ ${WEATHER.temp}°C · wiatr ${WEATHER.wind} m/s`;
+    `Piastów ${icon} ${WEATHER.temp}°C · wiatr ${WEATHER.wind} m/s`;
 }
