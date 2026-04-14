@@ -25,6 +25,13 @@ function initAudio() {
 });
 
 function toggleAudio() {
+  // Jeśli audio nie zostało jeszcze zainicjalizowane (pierwsze kliknięcie przycisku),
+  // uruchom audio zamiast przełączać na OFF
+  if (!audioCtx && audioOn) {
+    initAudio();
+    return;
+  }
+
   audioOn = !audioOn;
   const btn = document.getElementById('audio-btn');
   if (audioOn) {
