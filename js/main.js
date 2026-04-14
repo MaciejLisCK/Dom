@@ -109,7 +109,7 @@ window.addEventListener('deviceorientation', e => {
 const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5 };
 
 // Kury
-const chickens = Array.from({length: 2}, (_, i) => ({
+const chickens = Array.from({length: 8}, (_, i) => ({
   x:            0.33 + i * 0.11,
   y:            0.25 + i * 0.45,
   dir:          i % 2 === 0 ? 1 : -1,
