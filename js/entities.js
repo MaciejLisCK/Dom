@@ -156,6 +156,9 @@ function drawDog(period, nowMs) {
   let targetX;
   if (cursorActive) {
     targetX = Math.max(0.06, Math.min(0.92, cursor.x));
+  } else if (tilt.active) {
+    // Przechylenie telefonu (-45..45°) → pozycja lisa (0.06..0.92)
+    targetX = Math.max(0.06, Math.min(0.92, (tilt.gamma + 45) / 90));
   } else {
     if (Math.abs(fox.x - fox.autoTarget) < 0.02 || Math.random() < 0.002) {
       fox.autoTarget = 0.15 + Math.random() * 0.70;

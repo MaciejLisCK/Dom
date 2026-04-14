@@ -77,11 +77,32 @@ const cursor = { x: null, lastMoved: 0 };
 canvas.addEventListener('mousemove', e => {
   cursor.x = e.clientX / W; cursor.lastMoved = Date.now();
 });
+
+let tiltPermissionRequested = false;
+function requestTiltPermission() {
+  if (tiltPermissionRequested) return;
+  tiltPermissionRequested = true;
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().catch(() => {});
+  }
+}
+
 canvas.addEventListener('touchstart', e => {
   cursor.x = e.touches[0].clientX / W; cursor.lastMoved = Date.now();
+  requestTiltPermission();
 }, { passive: true });
 canvas.addEventListener('touchmove', e => {
   cursor.x = e.touches[0].clientX / W; cursor.lastMoved = Date.now();
+}, { passive: true });
+
+// Przechylenie urządzenia (mobilne)
+const tilt = { gamma: 0, active: false };
+window.addEventListener('deviceorientation', e => {
+  if (e.gamma !== null) {
+    tilt.gamma = Math.max(-45, Math.min(45, e.gamma));
+    tilt.active = true;
+  }
 }, { passive: true });
 
 // Stan lisa
@@ -133,12 +154,13 @@ function draw(nowMs) {
 
   // Drzewa
   const groundY = H * 0.65;
-  drawTree(W * 0.12, groundY, 45, period, 1.2);
-  drawTree(W * 0.18, groundY, 38, period, 0.8);
-  drawTree(W * 0.82, groundY, 42, period, 1.0);
-  drawTree(W * 0.88, groundY, 35, period, 1.5);
-  drawTree(W * 0.72, groundY, 40, period, 0.9);
-  drawTree(W * 0.28, groundY, 36, period, 1.3);
+  const tiltBias = tilt.active ? (tilt.gamma / 45) * 8 : 0;
+  drawTree(W * 0.12, groundY, 45, period, 1.2, tiltBias);
+  drawTree(W * 0.18, groundY, 38, period, 0.8, tiltBias);
+  drawTree(W * 0.82, groundY, 42, period, 1.0, tiltBias);
+  drawTree(W * 0.88, groundY, 35, period, 1.5, tiltBias);
+  drawTree(W * 0.72, groundY, 40, period, 0.9, tiltBias);
+  drawTree(W * 0.28, groundY, 36, period, 1.3, tiltBias);
 
   // Krzewy
   drawBush(W * 0.38, groundY, 5,   period);
