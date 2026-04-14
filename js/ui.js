@@ -20,6 +20,7 @@ function updateWeatherInfo() {
     clear:         '☀',
     partly_cloudy: '⛅',
     cloudy:        '☁',
+    foggy:         '🌫',
     rainy:         '🌧',
     snowy:         '❄',
     stormy:        '⛈',
