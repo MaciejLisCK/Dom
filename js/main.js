@@ -173,6 +173,7 @@ function draw(nowMs) {
   drawBush(W * 0.65, groundY, 3.5, period);
 
   drawHouse(period);
+  drawFog(period, nowMs);
 
   // Kury i lis – rysowanie w kolejności głębokości (dalej = najpierw)
   const allEntities = [
@@ -190,6 +191,9 @@ function draw(nowMs) {
   }
 
   drawFireflies(period, nowMs);
+  drawRain(nowMs);
+  drawSnow(nowMs);
+  drawLightning(nowMs);
   updateUI(period, hour, min, sec);
 
   requestAnimationFrame(draw);
