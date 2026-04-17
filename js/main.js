@@ -124,8 +124,8 @@ function isClickOnCoop(px, py) {
   return px >= hx && px <= hx + coopW && py >= hy - roofH && py <= groundY;
 }
 
-canvas.addEventListener('click', e => {
-  if (isClickOnCoop(e.clientX, e.clientY)) {
+function handleCoopTap(px, py) {
+  if (isClickOnCoop(px, py)) {
     const period = getPeriod(new Date().getHours());
     const isNight = period === 'night' || period === 'dusk';
     if (isNight || coopDoorManualOpen) {
@@ -152,7 +152,13 @@ canvas.addEventListener('click', e => {
       }
     }
   }
-});
+}
+
+canvas.addEventListener('click', e => handleCoopTap(e.clientX, e.clientY));
+canvas.addEventListener('touchend', e => {
+  const t = e.changedTouches[0];
+  handleCoopTap(t.clientX, t.clientY);
+}, { passive: true });
 
 // Kury
 const chickens = Array.from({length: 8}, (_, i) => ({
