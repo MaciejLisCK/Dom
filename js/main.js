@@ -195,8 +195,10 @@ function draw(nowMs) {
   // Niebo
   drawSky(period);
   drawStars(period, nowMs);
+  drawShootingStars(period, nowMs);
   drawMoon(period, nowMs);
   drawSun(period, nowMs);
+  drawRainbow(period, nowMs);
 
   // Zachmurzenie (overlay pogodowy)
   drawOvercast(period);
@@ -230,6 +232,7 @@ function draw(nowMs) {
 
   drawHouse(period);
   drawChickenCoop(period, nowMs, coopDoorManualOpen);
+  drawSeasonalEffects(period, nowMs);
   drawFog(period, nowMs);
 
   // Sprawdź czy lis zjadł kurę (próg odległości 0.07)
@@ -298,6 +301,7 @@ function draw(nowMs) {
   }
 
   drawFireflies(period, nowMs);
+  drawButterflies(period, nowMs);
   drawRain(nowMs);
   drawSnow(nowMs);
   drawLightning(nowMs);
