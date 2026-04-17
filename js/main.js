@@ -74,8 +74,18 @@ let t = 0;
 
 // Śledzenie kursora / dotyku
 const cursor = { x: null, y: null, lastMoved: 0 };
+
+function toCanvas(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  return [
+    (cx - r.left) * (W / r.width),
+    (cy - r.top) * (H / r.height),
+  ];
+}
+
 canvas.addEventListener('mousemove', e => {
-  cursor.x = e.clientX / W; cursor.y = e.clientY / H; cursor.lastMoved = Date.now();
+  const [cx, cy] = toCanvas(e.clientX, e.clientY);
+  cursor.x = cx / W; cursor.y = cy / H; cursor.lastMoved = Date.now();
 });
 
 let tiltPermissionRequested = false;
@@ -89,11 +99,13 @@ function requestTiltPermission() {
 }
 
 canvas.addEventListener('touchstart', e => {
-  cursor.x = e.touches[0].clientX / W; cursor.y = e.touches[0].clientY / H; cursor.lastMoved = Date.now();
+  const [cx, cy] = toCanvas(e.touches[0].clientX, e.touches[0].clientY);
+  cursor.x = cx / W; cursor.y = cy / H; cursor.lastMoved = Date.now();
   requestTiltPermission();
 }, { passive: true });
 canvas.addEventListener('touchmove', e => {
-  cursor.x = e.touches[0].clientX / W; cursor.y = e.touches[0].clientY / H; cursor.lastMoved = Date.now();
+  const [cx, cy] = toCanvas(e.touches[0].clientX, e.touches[0].clientY);
+  cursor.x = cx / W; cursor.y = cy / H; cursor.lastMoved = Date.now();
 }, { passive: true });
 
 // Przechylenie urządzenia (mobilne)
@@ -134,10 +146,14 @@ function handleCoopTap(px, py) {
   }
 }
 
-canvas.addEventListener('click', e => handleCoopTap(e.clientX, e.clientY));
+canvas.addEventListener('click', e => {
+  const [cx, cy] = toCanvas(e.clientX, e.clientY);
+  handleCoopTap(cx, cy);
+});
 canvas.addEventListener('touchend', e => {
   const t = e.changedTouches[0];
-  handleCoopTap(t.clientX, t.clientY);
+  const [cx, cy] = toCanvas(t.clientX, t.clientY);
+  handleCoopTap(cx, cy);
 }, { passive: true });
 
 // Kury
