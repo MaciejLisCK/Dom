@@ -271,6 +271,113 @@ function drawBush(bx, by, size, period) {
   }
 }
 
+function drawChickenCoop(period, nowMs) {
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const coopCX = W * 0.70;
+  const isNight = period === 'night' || period === 'dusk';
+
+  const coopW = 16 * S, coopH = 12 * S, roofH = 8 * S;
+  const hx = coopCX - coopW / 2;
+  const hy = groundY - coopH;
+
+  const wallC = isNight ? '#3a2810' : '#7a4828';
+  const wallD = isNight ? '#2a1a08' : '#573018';
+  const roofC = isNight ? '#1e1208' : '#4a2808';
+  const roofD = isNight ? '#120a04' : '#2e1804';
+
+  // Roof
+  ctx.fillStyle = roofC;
+  ctx.beginPath();
+  ctx.moveTo(coopCX, hy - roofH);
+  ctx.lineTo(hx + coopW, hy);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = roofD;
+  ctx.beginPath();
+  ctx.moveTo(coopCX, hy - roofH);
+  ctx.lineTo(coopCX, hy);
+  ctx.lineTo(hx, hy);
+  ctx.closePath();
+  ctx.fill();
+
+  // Walls
+  ctx.fillStyle = wallC;
+  ctx.fillRect(Math.round(hx), Math.round(hy), coopW, coopH);
+  ctx.fillStyle = wallD;
+  ctx.fillRect(Math.round(hx + coopW * 0.55), Math.round(hy), Math.round(coopW * 0.45), coopH);
+
+  // Deski (poziome linie)
+  ctx.fillStyle = isNight ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.18)';
+  for (let row = 0; row < 5; row++) {
+    ctx.fillRect(Math.round(hx), Math.round(hy + row * 2 * S + S), coopW, Math.max(1, Math.round(S * 0.5)));
+  }
+
+  // Wywietrznik (górna szczelina)
+  ctx.fillStyle = '#080608';
+  ctx.fillRect(Math.round(coopCX - S), Math.round(hy + S), 2 * S, S);
+
+  // Okienko (lewa strona)
+  const winW = 5 * S, winH = 4 * S;
+  const winX = hx + 2 * S, winY = hy + 3 * S;
+  ctx.fillStyle = '#1a0808';
+  ctx.fillRect(Math.round(winX - S), Math.round(winY - S), winW + 2 * S, winH + 2 * S);
+
+  if (isNight) {
+    // Ciepłe bursztynowe światło
+    ctx.fillStyle = '#e88020';
+    ctx.fillRect(Math.round(winX), Math.round(winY), winW, winH);
+    // Poświata wokół okienka
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#ffaa40';
+    ctx.fillRect(Math.round(winX - 3 * S), Math.round(winY - 3 * S), winW + 6 * S, winH + 6 * S);
+    ctx.globalAlpha = 1;
+    // Sylwetki kur w okienku
+    ctx.fillStyle = 'rgba(30,12,4,0.9)';
+    // Kura 1 (lewa)
+    ctx.fillRect(Math.round(winX + S),         Math.round(winY + 2 * S), 2 * S, S);       // tułów
+    ctx.fillRect(Math.round(winX + 1.5 * S),   Math.round(winY + S),     S,     S);        // głowa
+    ctx.fillRect(Math.round(winX + 1.5 * S),   Math.round(winY + 0.5*S), S*0.5, S*0.5);  // grzebień
+    // Kura 2 (prawa)
+    ctx.fillRect(Math.round(winX + 3 * S),     Math.round(winY + 2 * S), 1.5*S, S);       // tułów
+    ctx.fillRect(Math.round(winX + 3.5 * S),   Math.round(winY + S),     S,     S);        // głowa
+    ctx.fillRect(Math.round(winX + 3.5 * S),   Math.round(winY + 0.5*S), S*0.5, S*0.5);  // grzebień
+    // Ogon kury 1
+    ctx.fillRect(Math.round(winX + 0.5 * S),   Math.round(winY + S),     S*0.5, S);
+  } else {
+    ctx.fillStyle = '#1a2030';
+    ctx.fillRect(Math.round(winX), Math.round(winY), winW, winH);
+  }
+
+  // Drzwi (prawa strona)
+  const doorW = 4 * S, doorH = 6 * S;
+  const doorX = coopCX + 2 * S;
+  const doorY = groundY - doorH;
+  ctx.fillStyle = '#0a0505';
+  ctx.fillRect(Math.round(doorX - S), Math.round(doorY - S), doorW + 2 * S, doorH + S);
+
+  if (isNight) {
+    // Zamknięte drzwi
+    ctx.fillStyle = wallC;
+    ctx.fillRect(Math.round(doorX), Math.round(doorY), doorW, doorH);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(Math.round(doorX + doorW / 2), Math.round(doorY), Math.max(1, Math.round(S * 0.5)), doorH);
+  } else {
+    // Otwarte drzwi – ciemne wnętrze
+    ctx.fillStyle = '#080506';
+    ctx.fillRect(Math.round(doorX), Math.round(doorY), doorW, doorH);
+    // Drabinka (wyjście dla kur)
+    ctx.fillStyle = '#7a4820';
+    ctx.fillRect(Math.round(doorX - S), Math.round(groundY - S), doorW + S, S);
+    ctx.fillStyle = '#5a3010';
+    for (let i = 0; i < 3; i++) {
+      ctx.fillRect(Math.round(doorX + i * S * 0.8), Math.round(groundY - 2 * S + i * S * 0.5),
+        doorW - i * S * 0.5, Math.max(1, Math.round(S * 0.4)));
+    }
+  }
+}
+
 function drawFireflies(period, nowMs) {
   let alpha = 0;
   if (period === 'night') alpha = 1;
