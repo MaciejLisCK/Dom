@@ -6,6 +6,14 @@ function drawChicken(ch, period, nowMs, foxX, foxY) {
   const isNight = period === 'night' || period === 'dusk';
 
   ch.fleeing = Math.hypot(ch.x - foxX, ch.y - foxY) < 0.20;
+  const justScared = ch.fleeing && !ch.wasFleeingLastFrame;
+  ch.wasFleeingLastFrame = ch.fleeing;
+  if (ch.eggCooldown > 0) ch.eggCooldown -= 16;
+  if (justScared && ch.eggCooldown <= 0) {
+    eggs.push({ x: ch.x, y: ch.y, life: 25000 });
+    ch.eggCooldown = 10000;
+    playCluck();
+  }
   const spd = ch.fleeing ? ch.fleeSpeed : ch.speed;
   if (ch.fleeing) {
     ch.dir  = ch.x > foxX ? 1 : -1;
@@ -148,6 +156,26 @@ function drawChicken(ch, period, nowMs, foxX, foxY) {
   ctx.fillRect(Math.round(bx + 4*S), Math.round(cy - 23*S - bob), S, S);
 
   ctx.restore();
+}
+
+// Pixel art jajko
+function drawEgg(egg, period) {
+  const ex = egg.x * W;
+  const ey = H * (0.62 + egg.y * 0.16);
+  const depthScale = 0.35 + egg.y * 0.85;
+  const S = Math.max(1, Math.round(SCALE * 0.45 * depthScale));
+  const isNight = period === 'night' || period === 'dusk';
+  const eggC = isNight ? '#a09060' : '#f5e8c0';
+  const eggSh = isNight ? '#706040' : '#c0b070';
+
+  ctx.globalAlpha = egg.life < 4000 ? egg.life / 4000 : 1;
+  ctx.fillStyle = eggC;
+  ctx.fillRect(Math.round(ex - S),   Math.round(ey - 4*S), 2*S, S);
+  ctx.fillRect(Math.round(ex - 2*S), Math.round(ey - 3*S), 4*S, 3*S);
+  ctx.fillRect(Math.round(ex - S),   Math.round(ey),       2*S, S);
+  ctx.fillStyle = eggSh;
+  ctx.fillRect(Math.round(ex),       Math.round(ey - 3*S), 2*S, 4*S);
+  ctx.globalAlpha = 1;
 }
 
 // Pixel art lis

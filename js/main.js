@@ -131,6 +131,26 @@ canvas.addEventListener('click', e => {
     if (isNight || coopDoorManualOpen) {
       coopDoorManualOpen = !coopDoorManualOpen;
     }
+    return;
+  }
+
+  // Tapnięcie w kurę → znosiny jajka
+  const period = getPeriod(new Date().getHours());
+  const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
+  if (!coopNight) {
+    for (const ch of chickens) {
+      if (ch.eaten) continue;
+      const chScreenX = ch.x * W;
+      const chScreenY = H * (0.62 + ch.y * 0.16) - SCALE * 8 * (0.35 + ch.y * 0.85);
+      if (Math.hypot(e.clientX - chScreenX, e.clientY - chScreenY) < 40) {
+        if (ch.eggCooldown <= 0) {
+          eggs.push({ x: ch.x, y: ch.y, life: 25000 });
+          ch.eggCooldown = 10000;
+          playCluck();
+        }
+        break;
+      }
+    }
   }
 });
 
@@ -142,17 +162,22 @@ const chickens = Array.from({length: 8}, (_, i) => ({
   dirY:         i % 2 === 0 ? 1 : -1,
   speed:        0.00004 + Math.random() * 0.00003,
   fleeSpeed:    0.00018 + Math.random() * 0.00008,
-  fleeing:      false,
-  eaten:        false,
-  eatRespawn:   0,
-  walkFrame:    Math.random() * Math.PI * 2,
-  cluckTimer:   Math.random() * 3000,
-  clucking:     false,
-  cluckDuration:400,
+  fleeing:            false,
+  wasFleeingLastFrame:false,
+  eggCooldown:        0,
+  eaten:              false,
+  eatRespawn:         0,
+  walkFrame:          Math.random() * Math.PI * 2,
+  cluckTimer:         Math.random() * 3000,
+  clucking:           false,
+  cluckDuration:      400,
 }));
 
 // Pióra (efekt po zjedzeniu kury)
 const feathers = [];
+
+// Jajka znoszone przez wystraszone kury
+const eggs = [];
 
 // Główna pętla rysowania
 function draw(nowMs) {
@@ -246,10 +271,17 @@ function draw(nowMs) {
     ctx.globalAlpha = 1;
   }
 
+  // Aktualizacja czasu życia jajek
+  for (let i = eggs.length - 1; i >= 0; i--) {
+    eggs[i].life -= 16;
+    if (eggs[i].life <= 0) eggs.splice(i, 1);
+  }
+
   // Kury i lis – rysowanie w kolejności głębokości (dalej = najpierw)
   const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
   const allEntities = [
     ...(coopNight ? [] : chickens.filter(ch => !ch.eaten).map(ch => ({ kind: 'chicken', ref: ch }))),
+    ...eggs.map(eg => ({ kind: 'egg', ref: eg })),
     { kind: 'fox' },
   ];
   allEntities.sort((a, b) => {
@@ -259,6 +291,7 @@ function draw(nowMs) {
   });
   for (const e of allEntities) {
     if (e.kind === 'chicken') drawChicken(e.ref, period, nowMs, fox.x, fox.y);
+    else if (e.kind === 'egg') drawEgg(e.ref, period);
     else drawDog(period, nowMs);
   }
 

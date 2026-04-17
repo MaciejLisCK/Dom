@@ -120,6 +120,25 @@ function playBird() {
   }
 }
 
+// Gdakanie kury (znoszącej jajko)
+function playCluck() {
+  if (!audioOn || !audioCtx) return;
+  const t0 = audioCtx.currentTime;
+  [600, 900, 500].forEach((f, i) => {
+    const t2 = t0 + i * 0.07;
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(f, t2);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.55, t2 + 0.13);
+    env.gain.setValueAtTime(0, t2);
+    env.gain.linearRampToValueAtTime(0.14, t2 + 0.02);
+    env.gain.linearRampToValueAtTime(0, t2 + 0.15);
+    osc.connect(env); env.connect(masterGain);
+    osc.start(t2); osc.stop(t2 + 0.18);
+  });
+}
+
 // Muzyka ambient – pentatonika C-dur (pianino syntetyczne)
 const PIANO = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
 let noteAt   = 0;
