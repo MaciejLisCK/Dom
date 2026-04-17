@@ -131,26 +131,6 @@ function handleCoopTap(px, py) {
     if (isNight || coopDoorManualOpen) {
       coopDoorManualOpen = !coopDoorManualOpen;
     }
-    return;
-  }
-
-  // Tapnięcie w kurę → znosiny jajka
-  const period = getPeriod(new Date().getHours());
-  const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
-  if (!coopNight) {
-    for (const ch of chickens) {
-      if (ch.eaten) continue;
-      const chScreenX = ch.x * W;
-      const chScreenY = H * (0.62 + ch.y * 0.16) - SCALE * 8 * (0.35 + ch.y * 0.85);
-      if (Math.hypot(e.clientX - chScreenX, e.clientY - chScreenY) < 40) {
-        if (ch.eggCooldown <= 0) {
-          eggs.push({ x: ch.x, y: ch.y, life: 25000 });
-          ch.eggCooldown = 10000;
-          playCluck();
-        }
-        break;
-      }
-    }
   }
 }
 
