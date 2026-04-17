@@ -271,11 +271,11 @@ function drawBush(bx, by, size, period) {
   }
 }
 
-function drawChickenCoop(period, nowMs) {
+function drawChickenCoop(period, nowMs, doorOverride = false) {
   const S = SCALE;
   const groundY = H * 0.65;
   const coopCX = W * 0.70;
-  const isNight = period === 'night' || period === 'dusk';
+  const isNight = (period === 'night' || period === 'dusk') && !doorOverride;
 
   const coopW = 16 * S, coopH = 12 * S, roofH = 8 * S;
   const hx = coopCX - coopW / 2;
