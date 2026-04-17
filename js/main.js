@@ -110,6 +110,30 @@ window.addEventListener('deviceorientation', e => {
 // Stan lisa
 const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5 };
 
+// Ręczne otwarcie drzwi kurnika
+let coopDoorManualOpen = false;
+
+function isClickOnCoop(px, py) {
+  const groundY = H * 0.65;
+  const coopCX = W * 0.70;
+  const coopW = 16 * SCALE;
+  const coopH = 12 * SCALE;
+  const roofH = 8 * SCALE;
+  const hx = coopCX - coopW / 2;
+  const hy = groundY - coopH;
+  return px >= hx && px <= hx + coopW && py >= hy - roofH && py <= groundY;
+}
+
+canvas.addEventListener('click', e => {
+  if (isClickOnCoop(e.clientX, e.clientY)) {
+    const period = getPeriod(new Date().getHours());
+    const isNight = period === 'night' || period === 'dusk';
+    if (isNight || coopDoorManualOpen) {
+      coopDoorManualOpen = !coopDoorManualOpen;
+    }
+  }
+});
+
 // Kury
 const chickens = Array.from({length: 8}, (_, i) => ({
   x:            0.33 + i * 0.11,
@@ -173,11 +197,11 @@ function draw(nowMs) {
   drawBush(W * 0.65, groundY, 3.5, period);
 
   drawHouse(period);
-  drawChickenCoop(period, nowMs);
+  drawChickenCoop(period, nowMs, coopDoorManualOpen);
   drawFog(period, nowMs);
 
   // Kury i lis – rysowanie w kolejności głębokości (dalej = najpierw)
-  const coopNight = period === 'night' || period === 'dusk';
+  const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
   const allEntities = [
     ...(coopNight ? [] : chickens.map(ch => ({ kind: 'chicken', ref: ch }))),
     { kind: 'fox' },
