@@ -1,3 +1,127 @@
+// ── Gwiazdy spadające ─────────────────────────────────────────────────────────
+const shootingStarPool = [];
+let nextShootingStarAt = 0;
+
+function spawnShootingStar(nowMs) {
+  if (nowMs < nextShootingStarAt) return;
+  nextShootingStarAt = nowMs + 5000 + Math.random() * 10000;
+  shootingStarPool.push({
+    x: 0.05 + Math.random() * 0.60,
+    y: 0.02 + Math.random() * 0.18,
+    vx: 0.0025 + Math.random() * 0.003,
+    vy: 0.001  + Math.random() * 0.0015,
+    life: 1.0,
+    tailLen: 0.06 + Math.random() * 0.08,
+  });
+}
+
+function drawShootingStars(period, nowMs) {
+  let alpha = 0;
+  if (period === 'night') alpha = 1;
+  else if (period === 'dusk' || period === 'dawn') alpha = 0.45;
+  if (alpha <= 0) return;
+  spawnShootingStar(nowMs);
+  for (let i = shootingStarPool.length - 1; i >= 0; i--) {
+    const s = shootingStarPool[i];
+    s.x += s.vx;
+    s.y += s.vy;
+    s.life -= 0.016;
+    if (s.life <= 0 || s.x > 1.05) { shootingStarPool.splice(i, 1); continue; }
+    const x1 = s.x * W, y1 = s.y * H;
+    const x0 = (s.x - s.tailLen) * W, y0 = (s.y - s.tailLen * 0.5) * H;
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgba(255,255,240,0)');
+    g.addColorStop(1, `rgba(255,255,240,${alpha * s.life})`);
+    ctx.strokeStyle = g;
+    ctx.lineWidth = SCALE * 0.9;
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    ctx.globalAlpha = alpha * s.life;
+    ctx.fillStyle = '#fffff0';
+    ctx.fillRect(Math.round(x1 - SCALE * 0.5), Math.round(y1 - SCALE * 0.5), SCALE, SCALE);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── Tęcza ─────────────────────────────────────────────────────────────────────
+function drawRainbow(period, nowMs) {
+  if (WEATHER.type !== 'partly_cloudy' && WEATHER.type !== 'rainy') return;
+  if (period === 'night' || period === 'dusk') return;
+  const pulse = 0.85 + 0.15 * Math.sin(nowMs * 0.0003);
+  const baseAlpha = WEATHER.type === 'partly_cloudy' ? 0.20 : 0.11;
+  const cx = W * 0.63, cy = H * 0.70;
+  const colors = ['#FF4444','#FF8800','#FFEE00','#44CC44','#4488FF','#6644BB','#9944DD'];
+  for (let i = 0; i < colors.length; i++) {
+    const r = (0.26 + i * 0.024) * H;
+    ctx.globalAlpha = baseAlpha * pulse;
+    ctx.strokeStyle = colors[i];
+    ctx.lineWidth = SCALE * 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── Pory roku ─────────────────────────────────────────────────────────────────
+function getSeason() {
+  const m = new Date().getMonth();
+  if (m >= 2 && m <= 4) return 'spring';
+  if (m >= 5 && m <= 7) return 'summer';
+  if (m >= 8 && m <= 10) return 'autumn';
+  return 'winter';
+}
+
+const autumnLeaves = Array.from({length: 40}, () => ({
+  x: Math.random(),
+  y: -Math.random(),
+  vx: (Math.random() - 0.5) * 0.00014,
+  vy: 0.00025 + Math.random() * 0.00035,
+  size: 1 + Math.floor(Math.random() * 2),
+  color: ['#c84010','#e07820','#c03010','#e8a030','#f0c040','#a03018','#d05008'][Math.floor(Math.random() * 7)],
+  swing: Math.random() * Math.PI * 2,
+  swingSpeed: 0.4 + Math.random() * 1.2,
+}));
+
+const springFlowers = [
+  [0.20, 0], [0.34, 0], [0.44, 0], [0.56, 0],
+  [0.66, 0], [0.76, 0], [0.82, 0], [0.25, 0], [0.72, 0],
+].map(([fx, _], i) => ({
+  fx,
+  colors: ['#ff88bb','#ffccee','#ff66aa','#ffffff','#ffaacc','#dd88ff','#ffddaa'][i % 7],
+}));
+
+function drawSeasonalEffects(period, nowMs) {
+  const season = getSeason();
+  const groundY = H * 0.65;
+  if (season === 'autumn') {
+    for (const l of autumnLeaves) {
+      l.x += l.vx + Math.sin(nowMs * 0.001 * l.swingSpeed + l.swing) * 0.00018;
+      l.y += l.vy;
+      if (l.y > 1.02) { l.y = -0.02 - Math.random() * 0.05; l.x = Math.random(); }
+      ctx.globalAlpha = 0.80;
+      ctx.fillStyle = l.color;
+      ctx.fillRect(Math.round(l.x * W), Math.round(l.y * H), l.size * SCALE, l.size * SCALE);
+    }
+    ctx.globalAlpha = 1;
+  } else if (season === 'spring') {
+    for (let i = 0; i < springFlowers.length; i++) {
+      const { fx, colors: fc } = springFlowers[i];
+      const bx = fx * W;
+      const by = groundY + SCALE * 2;
+      const blink = 0.65 + 0.35 * Math.sin(nowMs * 0.0008 + i * 1.1);
+      ctx.globalAlpha = blink;
+      ctx.fillStyle = fc;
+      ctx.fillRect(Math.round(bx - SCALE), Math.round(by - 2 * SCALE), 2 * SCALE, 2 * SCALE);
+      ctx.fillRect(Math.round(bx - 2 * SCALE), Math.round(by - SCALE), SCALE, SCALE);
+      ctx.fillRect(Math.round(bx + SCALE), Math.round(by - SCALE), SCALE, SCALE);
+      ctx.fillStyle = '#ffee44';
+      ctx.fillRect(Math.round(bx), Math.round(by - SCALE), SCALE, SCALE);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
 // Pomocnik pixel
 function px(x, y, color, size = 1) {
   ctx.fillStyle = typeof color === 'string' ? color : rgb(color);
@@ -229,10 +353,20 @@ function drawHouse(period) {
 function drawTree(tx, baseY, h, period, wobble, tiltBias = 0) {
   const S = SCALE;
   const isNight = period === 'night' || period === 'dusk';
-  const trunkC = isNight ? '#3a2010' : '#6a3a10';
-  const leafC  = isNight ? '#0a2a0a' : '#228822';
-  const leafD  = isNight ? '#071507' : '#185018';
-  const leafH  = isNight ? '#0f3a0f' : '#2aaa2a';
+  const season  = getSeason();
+  const trunkC  = isNight ? '#3a2010' : '#6a3a10';
+  let leafC, leafD, leafH;
+  if (isNight) {
+    leafC = '#0a2a0a'; leafD = '#071507'; leafH = '#0f3a0f';
+  } else if (season === 'autumn') {
+    leafC = '#c84010'; leafD = '#8a2a08'; leafH = '#e0701a';
+  } else if (season === 'winter') {
+    leafC = '#2a3a2a'; leafD = '#1a2a1a'; leafH = '#3a4a3a';
+  } else if (season === 'spring') {
+    leafC = '#30b830'; leafD = '#208020'; leafH = '#48d448';
+  } else {
+    leafC = '#228822'; leafD = '#185018'; leafH = '#2aaa2a';
+  }
   const tw = 3 * S, th = h * S;
   ctx.fillStyle = trunkC;
   ctx.fillRect(Math.round(tx - tw / 2), Math.round(baseY - th * 0.45), tw, Math.round(th * 0.45));
@@ -255,6 +389,16 @@ function drawTree(tx, baseY, h, period, wobble, tiltBias = 0) {
     ctx.lineTo(Math.round(tx), Math.round(ly));
     ctx.lineTo(Math.round(tx - lw * 0.2), Math.round(ly));
     ctx.closePath(); ctx.fill();
+    if (season === 'winter' && !isNight) {
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = '#ddeeff';
+      ctx.beginPath();
+      ctx.moveTo(Math.round(tipX), Math.round(ly - lh));
+      ctx.lineTo(Math.round(tx + lw * 0.28), Math.round(ly - lh * 0.55));
+      ctx.lineTo(Math.round(tx - lw * 0.22), Math.round(ly - lh * 0.55));
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
   }
 }
 
