@@ -173,11 +173,13 @@ function draw(nowMs) {
   drawBush(W * 0.65, groundY, 3.5, period);
 
   drawHouse(period);
+  drawChickenCoop(period, nowMs);
   drawFog(period, nowMs);
 
   // Kury i lis – rysowanie w kolejności głębokości (dalej = najpierw)
+  const coopNight = period === 'night' || period === 'dusk';
   const allEntities = [
-    ...chickens.map(ch => ({ kind: 'chicken', ref: ch })),
+    ...(coopNight ? [] : chickens.map(ch => ({ kind: 'chicken', ref: ch }))),
     { kind: 'fox' },
   ];
   allEntities.sort((a, b) => {
