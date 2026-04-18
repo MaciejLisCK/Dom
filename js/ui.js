@@ -2,6 +2,16 @@ function updateUI(period, hour, min, sec) {
   const pad = n => String(n).padStart(2, '0');
   document.getElementById('time-display').textContent = `${pad(hour)}:${pad(min)}:${pad(sec)}`;
 
+  const scoreEl = document.getElementById('fox-score');
+  if (scoreEl) {
+    if (foxScore > 0) {
+      scoreEl.textContent = `\uD83E\uDD8A ${foxScore}`;
+      scoreEl.style.opacity = foxScoreFlash > 0 ? '1' : '0.55';
+    } else {
+      scoreEl.textContent = '';
+    }
+  }
+
   const greetings = {
     night:   'Dobranoc!',     dawn:    'Dzień dobry!',
     morning: 'Dzień dobry!',  day:     'Miłego dnia!',

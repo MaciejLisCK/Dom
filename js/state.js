@@ -140,3 +140,7 @@ const chickens = Array.from({length: 8}, (_, i) => ({
 // ── Efekty ─────────────────────────────────────────────────────────────────────
 const feathers = [];
 const eggs = [];
+
+// ── Wynik lisa ─────────────────────────────────────────────────────────────────
+let foxScore = 0;
+let foxScoreFlash = 0;  // timer for score flash animation

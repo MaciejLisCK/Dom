@@ -64,3 +64,11 @@ canvas {
   user-select: none;
 }
 #audio-btn:hover { background: rgba(255,255,255,0.18); }
+#fox-score {
+  font-size: 0.82rem;
+  margin-top: 5px;
+  letter-spacing: 2px;
+  color: #ffdd88;
+  transition: opacity 0.4s;
+  min-height: 1.2em;
+}
