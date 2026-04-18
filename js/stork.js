@@ -57,43 +57,45 @@ function drawStork(period, nowMs) {
     ctx.scale(-1, 1);
   }
 
+  const SS = S * 0.75;
+
   // Legs (long, on the nest)
   ctx.fillStyle = legC;
-  ctx.fillRect(Math.round(storkX - S),     Math.round(sy - 8 * S), S, 8 * S);
-  ctx.fillRect(Math.round(storkX + 2 * S), Math.round(sy - 8 * S), S, 8 * S);
+  ctx.fillRect(Math.round(storkX - SS),      Math.round(sy - 8 * SS), SS, 8 * SS);
+  ctx.fillRect(Math.round(storkX + 2 * SS),  Math.round(sy - 8 * SS), SS, 8 * SS);
   // Feet/toes
-  ctx.fillRect(Math.round(storkX - 2 * S), Math.round(sy - S), 2 * S, S);
-  ctx.fillRect(Math.round(storkX - S),     Math.round(sy - S), 3 * S, S);
-  ctx.fillRect(Math.round(storkX + 2 * S), Math.round(sy - S), 3 * S, S);
+  ctx.fillRect(Math.round(storkX - 2 * SS),  Math.round(sy - SS), 2 * SS, SS);
+  ctx.fillRect(Math.round(storkX - SS),       Math.round(sy - SS), 3 * SS, SS);
+  ctx.fillRect(Math.round(storkX + 2 * SS),   Math.round(sy - SS), 3 * SS, SS);
 
   // Body (white with black wing patches)
   ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(storkX - 3 * S), Math.round(sy - 18 * S), 8 * S, 10 * S);
+  ctx.fillRect(Math.round(storkX - 3 * SS),   Math.round(sy - 18 * SS), 8 * SS, 10 * SS);
 
   // Black wing patches
   ctx.fillStyle = darkC;
-  ctx.fillRect(Math.round(storkX - 3 * S), Math.round(sy - 15 * S), 8 * S, 4 * S);
+  ctx.fillRect(Math.round(storkX - 3 * SS),   Math.round(sy - 15 * SS), 8 * SS, 4 * SS);
   ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(storkX - 2 * S), Math.round(sy - 15 * S), 6 * S, 3 * S);
+  ctx.fillRect(Math.round(storkX - 2 * SS),   Math.round(sy - 15 * SS), 6 * SS, 3 * SS);
 
   // Neck
   ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(storkX),         Math.round(sy - 24 * S), 2 * S, 6 * S);
+  ctx.fillRect(Math.round(storkX),             Math.round(sy - 24 * SS), 2 * SS, 6 * SS);
 
   // Head
   ctx.fillStyle = bodyC;
-  ctx.fillRect(Math.round(storkX - S),     Math.round(sy - 28 * S), 4 * S, 4 * S);
+  ctx.fillRect(Math.round(storkX - SS),        Math.round(sy - 28 * SS), 4 * SS, 4 * SS);
 
   // Beak (long orange)
   ctx.fillStyle = beakC;
-  ctx.fillRect(Math.round(storkX + 3 * S), Math.round(sy - 27 * S), 5 * S, S);
-  ctx.fillRect(Math.round(storkX + 3 * S), Math.round(sy - 26 * S), 4 * S, S);
+  ctx.fillRect(Math.round(storkX + 3 * SS),    Math.round(sy - 27 * SS), 5 * SS, SS);
+  ctx.fillRect(Math.round(storkX + 3 * SS),    Math.round(sy - 26 * SS), 4 * SS, SS);
 
   // Eye
   ctx.fillStyle = eyeC;
-  ctx.fillRect(Math.round(storkX + S),     Math.round(sy - 27 * S), S, S);
+  ctx.fillRect(Math.round(storkX + SS),         Math.round(sy - 27 * SS), SS, SS);
   ctx.fillStyle = '#ffeecc';
-  ctx.fillRect(Math.round(storkX + S),     Math.round(sy - 28 * S), S, S);
+  ctx.fillRect(Math.round(storkX + SS),         Math.round(sy - 28 * SS), SS, SS);
 
   ctx.restore();
 }

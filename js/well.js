@@ -1,8 +1,8 @@
 // ── Studnia ─────────────────────────────────────────────────────────────────────
 function drawWell(period, nowMs) {
   const S = SCALE;
-  const groundY = H * 0.65;
-  const wx = W * 0.33;
+  const groundY = H * 0.70;
+  const wx = W * 0.38;
   const isNight = period === 'night' || period === 'dusk';
 
   const woodC  = isNight ? '#3a2010' : '#7a4820';
