@@ -118,3 +118,58 @@ function drawFog(period, nowMs) {
   ctx.fillRect(0, 0, W, H * 0.72);
   ctx.globalAlpha = 1;
 }
+
+// ── Kałuże po deszczu ──────────────────────────────────────────────────────────
+const puddles = [
+  { x: 0.42, rx: 3.5, ry: 0.7, level: 0 },
+  { x: 0.55, rx: 2.8, ry: 0.6, level: 0 },
+  { x: 0.30, rx: 2.0, ry: 0.5, level: 0 },
+  { x: 0.68, rx: 2.2, ry: 0.5, level: 0 },
+  { x: 0.22, rx: 1.8, ry: 0.4, level: 0 },
+];
+
+function drawPuddles(period, nowMs) {
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const isRaining = WEATHER.type === 'rainy' || WEATHER.type === 'stormy';
+  const isNight = period === 'night' || period === 'dusk';
+
+  for (const p of puddles) {
+    if (isRaining) {
+      p.level = Math.min(1, p.level + 0.0004);
+    } else {
+      p.level = Math.max(0, p.level - 0.0001);
+    }
+    if (p.level < 0.02) continue;
+
+    const pw = p.rx * S * p.level;
+    const ph = p.ry * S * p.level;
+    const px2 = p.x * W;
+    const py2 = groundY + S;
+
+    // Puddle reflection (sky colour)
+    const skyC = isNight ? [8, 12, 30] : [100, 160, 220];
+    ctx.globalAlpha = p.level * 0.55;
+    ctx.fillStyle = rgb(skyC);
+    ctx.beginPath();
+    ctx.ellipse(px2, py2, pw, ph, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ripple rings when raining
+    if (isRaining) {
+      const ripplePhase = (nowMs * 0.002 + p.x * 10) % (Math.PI * 2);
+      ctx.globalAlpha = p.level * 0.25 * Math.abs(Math.sin(ripplePhase));
+      ctx.strokeStyle = isNight ? '#3060a0' : '#80b8e8';
+      ctx.lineWidth = Math.max(1, S * 0.4);
+      ctx.beginPath();
+      ctx.ellipse(px2, py2, pw * 0.6, ph * 0.6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Highlight glint
+    ctx.globalAlpha = p.level * 0.3;
+    ctx.fillStyle = isNight ? '#204060' : '#c8e8ff';
+    ctx.fillRect(Math.round(px2 - pw * 0.3), Math.round(py2 - ph * 0.2), Math.round(pw * 0.4), Math.max(1, Math.round(ph * 0.25)));
+  }
+  ctx.globalAlpha = 1;
+}

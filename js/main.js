@@ -11,7 +11,9 @@ function draw(nowMs) {
 
   // Niebo
   drawSky(period);
+  drawAurora(period, nowMs);
   drawStars(period, nowMs);
+  drawConstellations(period, nowMs);
   drawShootingStars(period, nowMs);
   drawMoon(period, nowMs);
   drawSun(period, nowMs);
@@ -28,8 +30,10 @@ function draw(nowMs) {
 
   drawBirds(period, nowMs);
   drawGround(period);
+  drawPuddles(period, nowMs);
   drawPath(period);
   drawFence(period);
+  drawCrow(period, nowMs);
 
   // Drzewa
   const groundY = H * 0.65;
@@ -47,8 +51,12 @@ function draw(nowMs) {
   drawBush(W * 0.35, groundY, 3,   period);
   drawBush(W * 0.65, groundY, 3.5, period);
 
+  drawWell(period, nowMs);
+  drawGarden(period, nowMs);
   drawHouse(period);
   drawChickenCoop(period, nowMs, coopDoorManualOpen);
+  drawCat(period, nowMs);
+  drawStork(period, nowMs);
   drawSeasonalEffects(period, nowMs);
   drawFog(period, nowMs);
 
@@ -58,6 +66,8 @@ function draw(nowMs) {
     if (!ch.eaten && Math.hypot(ch.x - fox.x, ch.y - fox.y) < EAT_DIST) {
       ch.eaten = true;
       ch.eatRespawn = nowMs + 8000 + Math.random() * 4000;
+      foxScore++;
+      foxScoreFlash = 2000;
       const fx = ch.x * W;
       const fy = H * (0.62 + ch.y * 0.16);
       for (let i = 0; i < 10; i++) {
@@ -99,21 +109,26 @@ function draw(nowMs) {
     if (eggs[i].life <= 0) eggs.splice(i, 1);
   }
 
-  // Kury i lis – głębokość
+  // Wynik lisa – timer flasha
+  if (foxScoreFlash > 0) foxScoreFlash -= 16;
+
+  // Kury, lis i zajączek – głębokość
   const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
   const allEntities = [
     ...(coopNight ? [] : chickens.filter(ch => !ch.eaten).map(ch => ({ kind: 'chicken', ref: ch }))),
     ...eggs.map(eg => ({ kind: 'egg', ref: eg })),
     { kind: 'fox' },
+    { kind: 'rabbit' },
   ];
   allEntities.sort((a, b) => {
-    const ya = a.kind === 'fox' ? fox.y : a.ref.y;
-    const yb = b.kind === 'fox' ? fox.y : b.ref.y;
+    const ya = a.kind === 'fox' ? fox.y : a.kind === 'rabbit' ? rabbit.y : a.ref.y;
+    const yb = b.kind === 'fox' ? fox.y : b.kind === 'rabbit' ? rabbit.y : b.ref.y;
     return ya - yb;
   });
   for (const e of allEntities) {
     if (e.kind === 'chicken') drawChicken(e.ref, period, nowMs, fox.x, fox.y);
-    else if (e.kind === 'egg') drawEgg(e.ref, period);
+    else if (e.kind === 'egg')    drawEgg(e.ref, period);
+    else if (e.kind === 'rabbit') drawRabbit(period, nowMs);
     else drawDog(period, nowMs);
   }
 
