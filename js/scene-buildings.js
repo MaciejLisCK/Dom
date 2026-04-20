@@ -97,13 +97,13 @@ function drawHouse(period) {
 // ── Poświata kurnika (hover / pulse mobilny) ──────────────────────────────────
 function drawCoopGlow(period, nowMs) {
   const isNight = period === 'night' || period === 'dusk';
-  if (!isNight && !coopDoorManualOpen) return;
 
   let alpha;
   if (isTouchOnly) {
     const pulse = 0.5 + 0.5 * Math.sin(nowMs * 0.003);
     alpha = 0.06 + pulse * 0.10;
   } else {
+    if (!isNight && !coopDoorManualOpen) return;
     if (!coopGlow.hover) return;
     alpha = 0.22;
   }
