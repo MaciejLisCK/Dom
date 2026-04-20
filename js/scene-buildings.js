@@ -102,7 +102,7 @@ function drawCoopGlow(period, nowMs) {
   let alpha;
   if (isTouchOnly) {
     const pulse = 0.5 + 0.5 * Math.sin(nowMs * 0.003);
-    alpha = 0.06 + pulse * 0.10;
+    alpha = 0.10 + pulse * 0.18;
   } else {
     if (!coopGlow.hover) return;
     alpha = 0.22;

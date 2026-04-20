@@ -12,6 +12,7 @@ canvas {
   height: 100vh;
   image-rendering: pixelated;
   cursor: default;
+  -webkit-tap-highlight-color: transparent;
 }
 #overlay {
   position: fixed;

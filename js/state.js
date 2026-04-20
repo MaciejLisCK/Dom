@@ -37,8 +37,7 @@ let t = 0;
 // ── Śledzenie kursora / dotyku ─────────────────────────────────────────────────
 const cursor = { x: null, y: null, lastMoved: 0 };
 
-const isTouchOnly = window.matchMedia('(pointer: coarse)').matches
-                 && !window.matchMedia('(pointer: fine)').matches;
+const isTouchOnly = 'ontouchstart' in window;
 const coopGlow = { hover: false };
 
 function toCanvas(cx, cy) {
@@ -52,6 +51,7 @@ function toCanvas(cx, cy) {
 canvas.addEventListener('mousemove', e => {
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
   cursor.x = cx / W; cursor.y = cy / H; cursor.lastMoved = Date.now();
+  if (isTouchOnly) return;
   const period = getPeriod(new Date().getHours());
   const isNight = period === 'night' || period === 'dusk';
   const overCoop = (isNight || coopDoorManualOpen) && isClickOnCoop(cx, cy);
@@ -59,6 +59,7 @@ canvas.addEventListener('mousemove', e => {
   canvas.style.cursor = overCoop ? 'pointer' : 'default';
 });
 canvas.addEventListener('mouseleave', () => {
+  if (isTouchOnly) return;
   coopGlow.hover = false;
   canvas.style.cursor = 'default';
 });
@@ -121,11 +122,15 @@ function handleCoopTap(px, py) {
   }
 }
 
+let lastTouchEndTime = 0;
+
 canvas.addEventListener('click', e => {
+  if (Date.now() - lastTouchEndTime < 500) return;
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
   handleCoopTap(cx, cy);
 });
 canvas.addEventListener('touchend', e => {
+  lastTouchEndTime = Date.now();
   const t = e.changedTouches[0];
   const [cx, cy] = toCanvas(t.clientX, t.clientY);
   handleCoopTap(cx, cy);
