@@ -113,19 +113,19 @@ function isClickOnCoop(px, py) {
 
 function handleCoopTap(px, py) {
   if (isClickOnCoop(px, py)) {
-    const period = getPeriod(new Date().getHours());
-    const isNight = period === 'night' || period === 'dusk';
-    if (isNight || coopDoorManualOpen) {
-      coopDoorManualOpen = !coopDoorManualOpen;
-    }
+    coopDoorManualOpen = !coopDoorManualOpen;
   }
 }
 
+let lastTouchEndMs = 0;
+
 canvas.addEventListener('click', e => {
+  if (Date.now() - lastTouchEndMs < 400) return;
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
   handleCoopTap(cx, cy);
 });
 canvas.addEventListener('touchend', e => {
+  lastTouchEndMs = Date.now();
   const t = e.changedTouches[0];
   const [cx, cy] = toCanvas(t.clientX, t.clientY);
   handleCoopTap(cx, cy);
