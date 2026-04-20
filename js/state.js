@@ -37,6 +37,10 @@ let t = 0;
 // ── Śledzenie kursora / dotyku ─────────────────────────────────────────────────
 const cursor = { x: null, y: null, lastMoved: 0 };
 
+const isTouchOnly = window.matchMedia('(pointer: coarse)').matches
+                 && !window.matchMedia('(pointer: fine)').matches;
+const coopGlow = { hover: false };
+
 function toCanvas(cx, cy) {
   const r = canvas.getBoundingClientRect();
   return [
@@ -48,6 +52,15 @@ function toCanvas(cx, cy) {
 canvas.addEventListener('mousemove', e => {
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
   cursor.x = cx / W; cursor.y = cy / H; cursor.lastMoved = Date.now();
+  const period = getPeriod(new Date().getHours());
+  const isNight = period === 'night' || period === 'dusk';
+  const overCoop = (isNight || coopDoorManualOpen) && isClickOnCoop(cx, cy);
+  coopGlow.hover = overCoop;
+  canvas.style.cursor = overCoop ? 'pointer' : 'default';
+});
+canvas.addEventListener('mouseleave', () => {
+  coopGlow.hover = false;
+  canvas.style.cursor = 'default';
 });
 
 let tiltPermissionRequested = false;

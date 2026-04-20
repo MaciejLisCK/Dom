@@ -94,6 +94,42 @@ function drawHouse(period) {
   ctx.fillRect(Math.round(dx - 2 * S), Math.round(groundY - 2 * S), dw + 4 * S, 2 * S);
 }
 
+// ── Poświata kurnika (hover / pulse mobilny) ──────────────────────────────────
+function drawCoopGlow(period, nowMs) {
+  const isNight = period === 'night' || period === 'dusk';
+  if (!isNight && !coopDoorManualOpen) return;
+
+  let alpha;
+  if (isTouchOnly) {
+    const pulse = 0.5 + 0.5 * Math.sin(nowMs * 0.003);
+    alpha = 0.06 + pulse * 0.10;
+  } else {
+    if (!coopGlow.hover) return;
+    alpha = 0.22;
+  }
+
+  const S = SCALE;
+  const groundY = H * 0.65;
+  const coopCX  = W * 0.70;
+  const coopH   = 12 * S;
+  const roofH   = 8  * S;
+  const hy      = groundY - coopH;
+  const outerR  = 14 * S + roofH;
+
+  const glowCX = coopCX;
+  const glowCY = hy - roofH * 0.2;
+  const grad = ctx.createRadialGradient(glowCX, glowCY, S * 2, glowCX, glowCY, outerR);
+  grad.addColorStop(0, `rgba(255, 200, 80, ${alpha})`);
+  grad.addColorStop(1, 'rgba(255, 160, 40, 0)');
+
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(glowCX, glowCY, outerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 // ── Kurnik ─────────────────────────────────────────────────────────────────────
 function drawChickenCoop(period, nowMs, doorOverride = false) {
   const S = SCALE;
