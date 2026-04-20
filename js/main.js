@@ -53,6 +53,7 @@ function draw(nowMs) {
 
   drawWell(period, nowMs);
   drawGarden(period, nowMs);
+  drawPond(period, nowMs);
   drawHouse(period);
   drawChickenCoop(period, nowMs, coopDoorManualOpen);
   drawCat(period, nowMs);
