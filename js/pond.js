@@ -7,7 +7,7 @@ function drawPond(period, nowMs) {
   const cx = W * 0.75;
   const cy = H * 0.78;
   const rx = Math.round(W * 0.062);
-  const ry = Math.round(H * 0.030);
+  const ry = Math.round(rx * 0.38);
 
   let waterDeep, waterMid, waterShimmer;
   switch (period) {
