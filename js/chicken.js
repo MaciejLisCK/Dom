@@ -5,7 +5,8 @@ function drawChicken(ch, period, nowMs, foxX, foxY) {
   const cy = H * (0.62 + ch.y * 0.16);
   const isNight = period === 'night' || period === 'dusk';
 
-  ch.fleeing = Math.hypot(ch.x - foxX, ch.y - foxY) < 0.20;
+  const scaredByFox = Math.hypot(ch.x - foxX, ch.y - foxY) < 0.20;
+  ch.fleeing = scaredByFox || shakePanic;
   const justScared = ch.fleeing && !ch.wasFleeingLastFrame;
   ch.wasFleeingLastFrame = ch.fleeing;
   if (ch.eggCooldown > 0) ch.eggCooldown -= 16;
@@ -14,10 +15,15 @@ function drawChicken(ch, period, nowMs, foxX, foxY) {
     ch.eggCooldown = 10000;
     playCluck();
   }
-  const spd = ch.fleeing ? ch.fleeSpeed : ch.speed;
+  const spd = ch.fleeing ? ch.fleeSpeed * (shakePanic && !scaredByFox ? 1.4 : 1.0) : ch.speed;
   if (ch.fleeing) {
-    ch.dir  = ch.x > foxX ? 1 : -1;
-    ch.dirY = ch.y > foxY ? 1 : -1;
+    if (shakePanic && !scaredByFox && ch.shakeDir) {
+      ch.dir  = ch.shakeDir.x >= 0 ? 1 : -1;
+      ch.dirY = ch.shakeDir.y >= 0 ? 1 : -1;
+    } else {
+      ch.dir  = ch.x > foxX ? 1 : -1;
+      ch.dirY = ch.y > foxY ? 1 : -1;
+    }
   } else {
     if (Math.random() < 0.001)  ch.dir  *= -1;
     if (Math.random() < 0.0008) ch.dirY *= -1;

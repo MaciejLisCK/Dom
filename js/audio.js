@@ -139,6 +139,12 @@ function playCluck() {
   });
 }
 
+function playShakePanic() {
+  for (let i = 0; i < 5; i++) {
+    setTimeout(playCluck, i * 110);
+  }
+}
+
 // Muzyka ambient – pentatonika C-dur (pianino syntetyczne)
 const PIANO = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99];
 let noteAt   = 0;
