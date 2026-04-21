@@ -9,6 +9,45 @@ function draw(nowMs) {
 
   ctx.clearRect(0, 0, W, H);
 
+  // ── Trzęsienie ────────────────────────────────────────────────────────────
+  ctx.save();
+  if (shakeJustTriggered) {
+    shakeJustTriggered = false;
+    for (const ch of chickens) {
+      if (!ch.eaten) {
+        const angle = Math.random() * Math.PI * 2;
+        ch.shakeDir = { x: Math.cos(angle), y: Math.sin(angle) };
+        const fx = ch.x * W;
+        const fy = H * (0.62 + ch.y * 0.16);
+        for (let i = 0; i < 6; i++) {
+          feathers.push({
+            x: fx, y: fy,
+            vx: (Math.random() - 0.5) * 5,
+            vy: -2 - Math.random() * 3,
+            life: 1.0,
+            size: SCALE * (0.6 + Math.random() * 0.8),
+            color: ['#f5eedc', '#d4c4a0', '#e8dcc8', '#c4b490'][Math.floor(Math.random() * 4)],
+          });
+        }
+      }
+    }
+    fox.x = Math.max(0.05, Math.min(0.95, fox.x + (Math.random() - 0.5) * 0.08));
+    fox.y = Math.max(0.05, Math.min(0.95, fox.y + (Math.random() - 0.5) * 0.05));
+    playShakePanic();
+  }
+  if (shakePanic) {
+    if (nowMs > shakePanicUntil) {
+      shakePanic = false;
+    } else {
+      const remaining = shakePanicUntil - nowMs;
+      if (remaining > 2500) {
+        const pct = (remaining - 2500) / 500;
+        const amp = pct * 4 * SCALE;
+        ctx.translate((Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp);
+      }
+    }
+  }
+
   // Niebo
   drawSky(period);
   drawAurora(period, nowMs);
@@ -143,6 +182,7 @@ function draw(nowMs) {
   drawLightning(nowMs);
   updateUI(period, hour, min, sec);
 
+  ctx.restore();
   requestAnimationFrame(draw);
 }
 
