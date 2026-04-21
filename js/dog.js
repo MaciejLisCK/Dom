@@ -42,8 +42,20 @@ function drawDog(period, nowMs) {
     fox.y += Math.sign(dy2) * Math.min(Math.abs(dy2), foxSpeedY);
   }
 
+  const JUMP_DUR = 500;
+  if (fox.jumpStartMs !== null) {
+    const elapsed = nowMs - fox.jumpStartMs;
+    if (elapsed >= JUMP_DUR) {
+      fox.jumpOffset = 0;
+      fox.jumpStartMs = null;
+    } else {
+      const tNorm = elapsed / JUMP_DUR;
+      fox.jumpOffset = -S * 15 * 4 * tNorm * (1 - tNorm);
+    }
+  }
+
   const dx = fox.x * W;
-  const dy = H * (0.62 + fox.y * 0.16);
+  const dy = H * (0.62 + fox.y * 0.16) + fox.jumpOffset;
   const flip = fox.dir === -1;
 
   ctx.save();

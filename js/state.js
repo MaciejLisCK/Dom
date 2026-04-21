@@ -95,7 +95,15 @@ window.addEventListener('deviceorientation', e => {
 }, { passive: true });
 
 // ── Stan lisa ──────────────────────────────────────────────────────────────────
-const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5 };
+const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5, jumpOffset: 0, jumpStartMs: null };
+
+function isClickOnFox(px, py) {
+  const depthScale = 0.35 + fox.y * 0.85;
+  const S = SCALE * depthScale;
+  const cx = fox.x * W;
+  const cy = H * (0.62 + fox.y * 0.16);
+  return px >= cx - 14*S && px <= cx + 14*S && py >= cy - 22*S && py <= cy + 6*S;
+}
 
 // ── Drzwi kurnika ──────────────────────────────────────────────────────────────
 let coopDoorManualOpen = false;
@@ -122,12 +130,14 @@ let lastTouchEndMs = 0;
 canvas.addEventListener('click', e => {
   if (Date.now() - lastTouchEndMs < 400) return;
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
+  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = Date.now(); return; }
   handleCoopTap(cx, cy);
 });
 canvas.addEventListener('touchend', e => {
   lastTouchEndMs = Date.now();
   const t = e.changedTouches[0];
   const [cx, cy] = toCanvas(t.clientX, t.clientY);
+  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = Date.now(); return; }
   handleCoopTap(cx, cy);
 }, { passive: true });
 
