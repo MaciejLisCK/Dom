@@ -130,14 +130,14 @@ let lastTouchEndMs = 0;
 canvas.addEventListener('click', e => {
   if (Date.now() - lastTouchEndMs < 400) return;
   const [cx, cy] = toCanvas(e.clientX, e.clientY);
-  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = Date.now(); return; }
+  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = performance.now(); return; }
   handleCoopTap(cx, cy);
 });
 canvas.addEventListener('touchend', e => {
   lastTouchEndMs = Date.now();
   const t = e.changedTouches[0];
   const [cx, cy] = toCanvas(t.clientX, t.clientY);
-  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = Date.now(); return; }
+  if (isClickOnFox(cx, cy)) { fox.jumpStartMs = performance.now(); return; }
   handleCoopTap(cx, cy);
 }, { passive: true });
 
