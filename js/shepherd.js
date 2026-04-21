@@ -5,9 +5,14 @@ const shepherd = {
   walkFrame: 0,
   autoTarget: 0.62,
   autoTargetY: 0.50,
-  mode: 'wander',   // 'wander' | 'chase'
+  mode: 'wander',   // 'wander' | 'chase' | 'return'
   barkTimer: 0,
+  chaseStart: 0,
 };
+
+const SHEPHERD_HOME_X = 0.72;
+const SHEPHERD_HOME_Y = 0.50;
+const CHASE_TIMEOUT_MS = 5000;
 
 function drawShepherd(period, nowMs) {
   const isNight = period === 'night' || period === 'dusk';
@@ -18,12 +23,28 @@ function drawShepherd(period, nowMs) {
   const CHASE_DIST = 0.28;
   const BARK_DIST  = 0.13;
 
-  if (distToFox < CHASE_DIST) {
-    shepherd.mode = 'chase';
-    shepherd.autoTarget  = fox.x;
-    shepherd.autoTargetY = fox.y;
-    if (distToFox < BARK_DIST && shepherd.barkTimer <= 0) {
-      shepherd.barkTimer = 1000;
+  if (shepherd.mode === 'return') {
+    // Wracamy do kurnika, ignorujemy lisa
+    shepherd.autoTarget  = SHEPHERD_HOME_X;
+    shepherd.autoTargetY = SHEPHERD_HOME_Y;
+    const distHome = Math.hypot(shepherd.x - SHEPHERD_HOME_X, shepherd.y - SHEPHERD_HOME_Y);
+    if (distHome < 0.03) {
+      shepherd.mode = 'wander';
+    }
+  } else if (distToFox < CHASE_DIST) {
+    if (shepherd.mode !== 'chase') {
+      shepherd.mode = 'chase';
+      shepherd.chaseStart = nowMs;
+    }
+    if (nowMs - shepherd.chaseStart >= CHASE_TIMEOUT_MS) {
+      // Minęło 5 sekund – rezygnuje i wraca
+      shepherd.mode = 'return';
+    } else {
+      shepherd.autoTarget  = fox.x;
+      shepherd.autoTargetY = fox.y;
+      if (distToFox < BARK_DIST && shepherd.barkTimer <= 0) {
+        shepherd.barkTimer = 1000;
+      }
     }
   } else {
     shepherd.mode = 'wander';
@@ -37,8 +58,8 @@ function drawShepherd(period, nowMs) {
 
   if (shepherd.barkTimer > 0) shepherd.barkTimer -= dt;
 
-  const speed  = shepherd.mode === 'chase' ? 0.00065 : 0.00028;
-  const speedY = shepherd.mode === 'chase' ? 0.00050 : 0.00020;
+  const speed  = shepherd.mode === 'chase' ? 0.00065 : shepherd.mode === 'return' ? 0.00035 : 0.00028;
+  const speedY = shepherd.mode === 'chase' ? 0.00050 : shepherd.mode === 'return' ? 0.00025 : 0.00020;
 
   const sdx = shepherd.autoTarget - shepherd.x;
   if (Math.abs(sdx) > 0.005) {
@@ -94,8 +115,8 @@ function drawShepherd(period, nowMs) {
   ctx.fillRect(Math.round(px + 2*S), Math.round(py - 4*S + leg2), 2*S, 5*S + Math.abs(leg2));
   ctx.fillRect(Math.round(px + 5*S), Math.round(py - 4*S + leg),  2*S, 5*S + Math.abs(leg));
 
-  // Ogon (szybsze machanie gdy goni)
-  const wagSpeed = shepherd.mode === 'chase' ? 0.015 : 0.005;
+  // Ogon (szybsze machanie gdy goni, opuszczony gdy wraca)
+  const wagSpeed = shepherd.mode === 'chase' ? 0.015 : shepherd.mode === 'return' ? 0.003 : 0.005;
   const wag = Math.sin(nowMs * wagSpeed) * 2 * S;
   ctx.fillStyle = bodyC;
   ctx.fillRect(Math.round(px - 9*S),  Math.round(py - 9*S  + wag * 0.4), 4*S, 3*S);
