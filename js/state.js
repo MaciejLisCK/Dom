@@ -71,6 +71,10 @@ function requestTiltPermission() {
       typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission().catch(() => {});
   }
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().catch(() => {});
+  }
 }
 
 canvas.addEventListener('touchstart', e => {
@@ -93,6 +97,23 @@ window.addEventListener('deviceorientation', e => {
     tilt.active = true;
   }
 }, { passive: true });
+
+// ── Potrząsanie urządzeniem (mobilne) ─────────────────────────────────────────
+let shakeLastMs = 0;
+if (typeof DeviceMotionEvent !== 'undefined') {
+  window.addEventListener('devicemotion', e => {
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    const mag = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
+    const now = performance.now();
+    if (mag > 20 && now - shakeLastMs > 1500) {
+      shakeLastMs = now;
+      shakePanic = true;
+      shakePanicUntil = now + 3000;
+      shakeJustTriggered = true;
+    }
+  }, { passive: true });
+}
 
 // ── Stan lisa ──────────────────────────────────────────────────────────────────
 const fox = { x: 0.35, y: 0.5, dir: 1, walkFrame: 0, autoDir: 1, autoTarget: 0.5, autoTargetY: 0.5 };
@@ -157,3 +178,7 @@ const eggs = [];
 // ── Wynik lisa ─────────────────────────────────────────────────────────────────
 let foxScore = 0;
 let foxScoreFlash = 0;  // timer for score flash animation
+
+let shakePanic = false;
+let shakePanicUntil = 0;
+let shakeJustTriggered = false;
