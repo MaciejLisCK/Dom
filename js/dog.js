@@ -36,10 +36,12 @@ function drawDog(period, nowMs) {
     fox.walkFrame = nowMs * 0.01;
   }
 
-  const foxSpeedY = cursorActive ? 0.0008 : 0.0003;
-  const dy2 = targetY - fox.y;
-  if (Math.abs(dy2) > 0.005) {
-    fox.y += Math.sign(dy2) * Math.min(Math.abs(dy2), foxSpeedY);
+  if (fox.jumpStartMs === null) {
+    const foxSpeedY = cursorActive ? 0.0008 : 0.0003;
+    const dy2 = targetY - fox.y;
+    if (Math.abs(dy2) > 0.005) {
+      fox.y += Math.sign(dy2) * Math.min(Math.abs(dy2), foxSpeedY);
+    }
   }
 
   const JUMP_DUR = 500;
