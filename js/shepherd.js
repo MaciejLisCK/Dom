@@ -44,6 +44,8 @@ function drawShepherd(period, nowMs) {
       shepherd.autoTargetY = fox.y;
       if (distToFox < BARK_DIST && shepherd.barkTimer <= 0) {
         shepherd.barkTimer = 1000;
+        foxScore = 0;
+        foxScoreFlash = 0;
       }
     }
   } else {
