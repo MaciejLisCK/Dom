@@ -114,23 +114,25 @@ function draw(nowMs) {
   // Wynik lisa – timer flasha
   if (foxScoreFlash > 0) foxScoreFlash -= 16;
 
-  // Kury, lis i zajączek – głębokość
+  // Kury, lis, owczarek i zajączek – głębokość
   const coopNight = (period === 'night' || period === 'dusk') && !coopDoorManualOpen;
   const allEntities = [
     ...(coopNight ? [] : chickens.filter(ch => !ch.eaten).map(ch => ({ kind: 'chicken', ref: ch }))),
     ...eggs.map(eg => ({ kind: 'egg', ref: eg })),
     { kind: 'fox' },
     { kind: 'rabbit' },
+    { kind: 'shepherd' },
   ];
   allEntities.sort((a, b) => {
-    const ya = a.kind === 'fox' ? fox.y : a.kind === 'rabbit' ? rabbit.y : a.ref.y;
-    const yb = b.kind === 'fox' ? fox.y : b.kind === 'rabbit' ? rabbit.y : b.ref.y;
+    const ya = a.kind === 'fox' ? fox.y : a.kind === 'rabbit' ? rabbit.y : a.kind === 'shepherd' ? shepherd.y : a.ref.y;
+    const yb = b.kind === 'fox' ? fox.y : b.kind === 'rabbit' ? rabbit.y : b.kind === 'shepherd' ? shepherd.y : b.ref.y;
     return ya - yb;
   });
   for (const e of allEntities) {
-    if (e.kind === 'chicken') drawChicken(e.ref, period, nowMs, fox.x, fox.y);
-    else if (e.kind === 'egg')    drawEgg(e.ref, period);
-    else if (e.kind === 'rabbit') drawRabbit(period, nowMs);
+    if (e.kind === 'chicken')      drawChicken(e.ref, period, nowMs, fox.x, fox.y);
+    else if (e.kind === 'egg')     drawEgg(e.ref, period);
+    else if (e.kind === 'rabbit')  drawRabbit(period, nowMs);
+    else if (e.kind === 'shepherd') drawShepherd(period, nowMs);
     else drawDog(period, nowMs);
   }
 

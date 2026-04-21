@@ -28,7 +28,18 @@ function drawDog(period, nowMs) {
     targetY = fox.autoTargetY;
   }
 
-  const foxSpeed = cursorActive ? 0.0010 : tilt.active ? 0.0007 : 0.0004;
+  // Ucieczka przed owczarkiem
+  const distToShepherd = Math.hypot(fox.x - shepherd.x, fox.y - shepherd.y);
+  const FLEE_DIST = 0.22;
+  if (distToShepherd < FLEE_DIST) {
+    targetX = fox.x + (fox.x - shepherd.x) * 2.0;
+    targetY = fox.y + (fox.y - shepherd.y) * 2.0;
+    targetX = Math.max(0.06, Math.min(0.92, targetX));
+    targetY = Math.max(0.06, Math.min(0.92, targetY));
+  }
+
+  const fleeing = distToShepherd < FLEE_DIST;
+  const foxSpeed = fleeing ? 0.0015 : cursorActive ? 0.0010 : tilt.active ? 0.0007 : 0.0004;
   const dx2 = targetX - fox.x;
   if (Math.abs(dx2) > 0.005) {
     fox.x += Math.sign(dx2) * Math.min(Math.abs(dx2), foxSpeed);
@@ -36,7 +47,7 @@ function drawDog(period, nowMs) {
     fox.walkFrame = nowMs * 0.01;
   }
 
-  const foxSpeedY = cursorActive ? 0.0008 : 0.0003;
+  const foxSpeedY = fleeing ? 0.0012 : cursorActive ? 0.0008 : 0.0003;
   const dy2 = targetY - fox.y;
   if (Math.abs(dy2) > 0.005) {
     fox.y += Math.sign(dy2) * Math.min(Math.abs(dy2), foxSpeedY);
