@@ -122,7 +122,7 @@ function isClickOnFox(px, py) {
   const depthScale = 0.35 + fox.y * 0.85;
   const S = SCALE * depthScale;
   const cx = fox.x * W;
-  const cy = H * (0.62 + fox.y * 0.16);
+  const cy = H * (0.62 + fox.y * 0.16) + fox.jumpOffset;
   return px >= cx - 14*S && px <= cx + 14*S && py >= cy - 22*S && py <= cy + 6*S;
 }
 
